@@ -1,0 +1,464 @@
+[
+    {
+        "name": "Stranger Things",
+        "genre": "drama",
+        "episodes": [8, 9, 8, 9],
+        "provider": "Netflix"
+    },
+    {
+        "name": "The Big Bang Theory",
+        "genre": "comedy",
+        "episodes": [17, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24],
+        "provider": "Netflix",
+        "currentSeries": 11,
+        "currentEpisode": 6
+    },
+    {
+        "name": "Plebs",
+        "genre": "comedy",
+        "episodes": [6, 8, 8, 8, 8, 1],
+        "provider": "itvX"
+    },
+    {
+        "name": "Better Call Sault",
+        "genre": "drama",
+        "episodes": [10, 10, 10, 10, 10, 13],
+        "provider": "Netflix"
+    },
+    {
+        "name": "The Good Place",
+        "genre": "comedy",
+        "episodes": [13, 12, 12, 13],
+        "provider": "Netflix"
+    },
+    {
+        "name": "House of Guinness",
+        "genre": "drama",
+        "episodes": [8],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Suits",
+        "genre": "drama",
+        "episodes": [12, 16, 16, 16, 16, 16, 16, 16, 10],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Arresested Development",
+        "genre": "comedy",
+        "episodes": [22, 18, 13, 22, 16],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Bojack Horseman",
+        "genre": "comedy",
+        "episodes": [12, 12, 12, 12, 12, 16],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Stath Lets Flats",
+        "genre": "comedy",
+        "episodes": [6, 6, 6],
+        "provider": "Channel 4"
+    },
+    {
+        "name": "Peak Blinders",
+        "genre": "drama",
+        "episodes": [6, 6, 6, 6, 6, 6],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Shameless",
+        "genre": "comedy",
+        "episodes": [7, 11, 8, 8, 16, 16, 16, 22, 11, 10, 14],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Killing Eve",
+        "genre": "drama",
+        "episodes": [8, 8, 8],
+        "provider": "Netflix"
+    },
+    {
+        "name": "House of Cards",
+        "genre": "drama",
+        "episodes": [13, 13, 13, 13, 13, 8],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Years and Years",
+        "genre": "drama",
+        "episodes": [6],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Mr. McMahon",
+        "genre": "documentary",
+        "episodes": [6],
+        "provider": "Netflix"
+    },
+    {
+        "name": "The Walk-In",
+        "genre": "drama",
+        "episodes": [5],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Year Of The Rabbit",
+        "genre": "comedy",
+        "episodes": [6],
+        "provider": "Netflix"
+    },
+        {
+        "name": "Black Mirror",
+        "genre": "drama",
+        "episodes": [3, 4, 6, 6, 3, 5, 6],
+        "provider": "Netflix"
+    },
+        {
+        "name": "Top Boy",
+        "genre": "drama",
+        "episodes": [8, 9, 8, 9],
+        "provider": "Netflix"
+    },
+        {
+        "name": "The Job Lot",
+        "genre": "comedy",
+        "episodes": [6, 6, 6],
+        "provider": "Netflix"
+    },
+        {
+        "name": "Zero Day",
+        "genre": "thriller",
+        "episodes": [6],
+        "provider": "Netflix"
+    },
+    {
+        "name": "Tour De France Unchained",
+        "genre": "documentary",
+        "episodes": [8, 8, 8],
+        "provider": "Netflix",
+        "currentSeries": 3,
+        "currentEpisode": 1
+    },
+    {
+        "name": "Beckham",
+        "genre": "documentary",
+        "episodes": [4],
+        "provider": "Netflix"
+    },
+    {
+        "name": "How Are You? It's Alan (Partridge)",
+        "genre": "comedy",
+        "episodes": [6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Early Doors",
+        "genre": "comedy",
+        "episodes": [6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Mandy",
+        "genre": "comedy",
+        "episodes": [8, 6, 6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Not Going Out",
+        "genre": "comedy",
+        "episodes": [6, 8, 8, 6, 6, 9, 12, 8, 8, 10, 6, 6, 8, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Doctor Who",
+        "genre": "sci-fi",
+        "episodes": [14, 14, 14, 18, 14, 14, 17, 13, 14, 13, 11, 11, 9, 4, 9, 8],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "This City Is Our",
+        "genre": "drama",
+        "episodes": [8],
+        "provider": "BBC iPlayer",
+        "currentSeries": 1,
+        "currentEpisode": 5
+    },
+    {
+        "name": "How Are You? It's Alan (Partridge)",
+        "genre": "comedy",
+        "episodes": [6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Am I Being Unreasonable?",
+        "genre": "comedy",
+        "episodes": [6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "The Royle Family",
+        "genre": "comedy",
+        "episodes": [6, 7, 12],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Ludwig",
+        "genre": "comedy",
+        "episodes": [6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "The Young Ones",
+        "genre": "comedy",
+        "episodes": [6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Avoidance",
+        "genre": "comedy",
+        "episodes": [6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Here We Go",
+        "genre": "comedy",
+        "episodes": [7, 6, 7],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Two Pints of Lager and A Packet of Crisps",
+        "genre": "comedy",
+        "episodes": [6, 6, 11, 8, 14, 10, 8, 8, 2, 6],
+        "provider": "BBC iPlayer",
+        "currentSeries": 6,
+        "currentEpisode": 10
+    },
+    {
+        "name": "Red Dwarf",
+        "genre": "comedy",
+        "episodes": [6, 6, 6, 6, 6, 6, 8, 8, 1, 6, 6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "The Outlaws",
+        "genre": "comedy",
+        "episodes": [6, 6, 5],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "The Mighty Boosh",
+        "genre": "comedy",
+        "episodes": [8, 6, 6],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Bad Education",
+        "genre": "comedy",
+        "episodes": [6, 7, 6, 1, 6, 7],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Scot Squad",
+        "genre": "comedy",
+        "episodes": [5, 6, 6, 6, 6, 5, 5, 5],
+        "provider": "BBC iPlayer"
+    },
+    {
+        "name": "Mitchell and Webb Are Not Helping",
+        "genre": "comedy",
+        "episodes": [6],
+        "provider": "Channel 4"
+    },
+    {
+        "name": "The Virtues",
+        "genre": "drama",
+        "episodes": [4],
+        "provider": "Channel 4"
+    },
+    {
+        "name": "Generation Z",
+        "genre": "comedy",
+        "episodes": [6],
+        "provider": "Channel 4"
+    },
+    {
+        "name": "Marvel Zombies",
+        "genre": "marvel",
+        "episodes": [4],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Inhumans",
+        "genre": "marvel",
+        "episodes": [8],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Agent Carter",
+        "genre": "marvel",
+        "episodes": [8, 10],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Agents of S.H.I.E.L.D.",
+        "genre": "marvel",
+        "episodes": [22, 22, 22, 22, 22, 13, 13],
+        "provider": "Disney+"
+    },
+    {
+        "name": "The Defenders",
+        "genre": "marvel",
+        "episodes": [8],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Iron Fist",
+        "genre": "marvel",
+        "episodes": [13, 10],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Luke Cage",
+        "genre": "marvel",
+        "episodes": [13, 13],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Jessica Jones",
+        "genre": "marvel",
+        "episodes": [13, 13, 13],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Eyes of Wakanda",
+        "genre": "marvel",
+        "episodes": [4],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Ironheart",
+        "genre": "marvel",
+        "episodes": [6],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Lost",
+        "genre": "drama",
+        "episodes": [25, 24, 23, 14, 17, 17],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Punisher",
+        "genre": "marvel",
+        "episodes": [13, 13],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Rematch",
+        "genre": "drama",
+        "episodes": [6],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Daredevil",
+        "genre": "marvel",
+        "episodes": [13, 13, 13],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Daredevil Born again",
+        "genre": "marvel",
+        "episodes": [9],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Modern Family",
+        "genre": "comedy",
+        "episodes": [24, 24, 24, 24, 24, 24, 22, 22, 22, 22, 18],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Skeleton Crew",
+        "genre": "star wars",
+        "episodes": [8],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Agatha All Along",
+        "genre": "marvel",
+        "episodes": [9],
+        "provider": "Disney+"
+    },
+    {
+        "name": "The Bear",
+        "genre": "drama",
+        "episodes": [8, 10, 10, 10],
+        "provider": "Disney+"
+    },
+    {
+        "name": "The Acolyte",
+        "genre": "star wars",
+        "episodes": [8],
+        "provider": "Disney+"
+    },
+    {
+        "name": "What If...?",
+        "genre": "marvel",
+        "episodes": [9, 9, 8],
+        "provider": "Disney+",
+        "currentSeries": 2,
+        "currentEpisode": 6
+    },
+    {
+        "name": "Lance",
+        "genre": "documentary",
+        "episodes": [2],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Echo",
+        "genre": "marvel",
+        "episodes": [5],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Ahsoka",
+        "genre": "star wars",
+        "episodes": [8],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Coleen Rooney: The Real Wagatha Story",
+        "genre": "documentary",
+        "episodes": [3],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Welcome to Wrexham",
+        "genre": "documentary",
+        "episodes": [18, 15, 8, 8],
+        "provider": "Disney+",
+        "currentSeries": 4,
+        "currentEpisode": 1
+    },
+    {
+        "name": "The Book of Boba Fett",
+        "genre": "star wars",
+        "episodes": [7],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Andor",
+        "genre": "star wars",
+        "episodes": [12, 12],
+        "provider": "Disney+"
+    },
+    {
+        "name": "Obi-Wan Kenobi",
+        "genre": "star wars",
+        "episodes": [6],
+        "provider": "Disney+"
+    }
+]

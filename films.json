@@ -1,0 +1,52 @@
+[
+    {
+        "name": "World War Z",
+        "genre": "horror",
+        "provider": "Netflix"
+    },
+    {
+        "name": "Bank of Dave 2 The Loan Ranger",
+        "genre": "comedy",
+        "provider": "Netflix"
+    },
+    {
+        "name": "Anyone But You",
+        "genre": "comedy",
+        "provider": "Netflix"
+    },
+    {
+        "name": "Carry-On",
+        "genre": "action",
+        "provider": "Netflix"
+    },
+    {
+        "name": "All Quiet On The Western Front",
+        "genre": "war",
+        "provider": "Netflix"
+    },
+    {
+        "name": "Amsterdam",
+        "genre": "mystery",
+        "provider": "Netflix"
+    },
+    {
+        "name": "The Sidemen Story",
+        "genre": "documentary",
+        "provider": "Netflix"
+    },
+    {
+        "name": "Mark Cavendish Never Enough",
+        "genre": "documentary",
+        "provider": "Netflix"
+    },
+    {
+        "name": "Mickey 17",
+        "genre": "sci-fi",
+        "provider": "Sky Cinema"
+    },
+    {
+        "name": "Thunderbolts",
+        "genre": "marvel",
+        "provider": "Disney+"
+    }
+]
