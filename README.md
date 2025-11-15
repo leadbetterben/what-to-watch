@@ -1,2 +1,18 @@
 # what-to-watch
-Finds a series or TV show to waatch
+Finds a series or TV show to watch
+
+This program prints out TV shows that a user is currently watching with their provider, current series and current episode.
+
+See GitHub Issues for future plans. New Issues and Pull Requests are welcome.
+
+## Usage
+
+### Run
+
+Run `go run .` from the repository to run the file.
+
+### Build & Run
+
+1. Run `go build`
+2. Run `go install`
+3. `what-to-watch` should be available to run from any directory
