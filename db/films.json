@@ -48,5 +48,15 @@
         "name": "Thunderbolts",
         "genre": "marvel",
         "provider": "Disney+"
+    },
+    {
+        "name": "Werewolf By Night",
+        "genre": "marvel",
+        "provider": "Disney+"
+    },
+    {
+        "name": "The Fantastic 4 First Steps",
+        "genre": "marvel",
+        "provider": "Disney+"
     }
 ]
