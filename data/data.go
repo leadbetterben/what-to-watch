@@ -6,9 +6,9 @@ type Show struct {
 	Episodes []int  `json:"episodes"`
 	Provider string `json:"provider"`
 	// CurrentSeries is only set if the user is currently watching this show
-	CurrentSeries *int `json:"currentSeries,omitempty"`
-	Series        string
+	CurrentSeries *int   `json:"currentSeries,omitempty"`
+	Series        string `json:"-"`
 	// CurrentEpisode is only set if the user is currently watching this show
-	CurrentEpisode *int `json:"currentEpisode,omitempty"`
-	Episode        string
+	CurrentEpisode *int   `json:"currentEpisode,omitempty"`
+	Episode        string `json:"-"`
 }

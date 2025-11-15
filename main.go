@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"what-to-watch/shows"
@@ -68,5 +70,31 @@ func main() {
 	for _, r := range cw {
 		fmt.Printf(format, strconv.Itoa(i), r.Name, r.Genre, r.Provider, r.Series, r.Episode)
 		i++
+	}
+
+	// Prompt user to mark a show as watched
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("\nEnter the Index of the show you watched (0 to cancel): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" || input == "0" {
+		fmt.Println("No changes made.")
+		return
+	}
+	idx, err := strconv.Atoi(input)
+	if err != nil {
+		fmt.Printf("invalid input: %s\n", input)
+		return
+	}
+
+	msg, err := shows.MarkEpisodeWatched(idx)
+	if err != nil {
+		fmt.Printf("error updating show: %s\n", err)
+		return
+	}
+	if msg != "" {
+		fmt.Println(msg)
+	} else {
+		fmt.Println("Updated show progress.")
 	}
 }
