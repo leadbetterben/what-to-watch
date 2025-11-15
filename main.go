@@ -1,15 +1,24 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
+
+	"what-to-watch/db"
 	"what-to-watch/shows"
 )
 
 func main() {
-	cw, err := shows.GetCurrentlyWatching()
+	s, err := db.ReadShows()
+	if err != nil {
+		log.Fatalf("error reading shows: %s", err)
+	}
+
+	cw, err := shows.GetCurrentlyWatching(s)
 	if err != nil {
 		log.Fatalf("error getting currently watching shows: %s", err)
 	}
@@ -68,5 +77,34 @@ func main() {
 	for _, r := range cw {
 		fmt.Printf(format, strconv.Itoa(i), r.Name, r.Genre, r.Provider, r.Series, r.Episode)
 		i++
+	}
+
+	// prompt user to mark a show as watched
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("\nEnter the Index of the show you watched (0 to cancel): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" || input == "0" {
+		fmt.Println("No changes made.")
+		return
+	}
+	idx, err := strconv.Atoi(input)
+	if err != nil {
+		fmt.Printf("invalid input: %s\n", input)
+		return
+	}
+
+	// update show watched
+	updatedShows, msg, err := shows.MarkEpisodeWatched(s, idx)
+	if err != nil {
+		fmt.Printf("error updating show: %s\n", err)
+		return
+	}
+	fmt.Println(msg)
+
+	// save updated shows
+	if err := db.WriteShows(updatedShows); err != nil {
+		fmt.Printf("error saving updated shows: %s\n", err)
+		return
 	}
 }

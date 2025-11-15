@@ -3,6 +3,8 @@ Finds a series or TV show to watch
 
 This program prints out TV shows that a user is currently watching with their provider, current series and current episode.
 
+It prompts to user to enter the show that they watched and updates the data with the new series and episode number.
+
 See GitHub Issues for future plans. New Issues and Pull Requests are welcome.
 
 ## Usage
