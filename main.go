@@ -7,11 +7,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"what-to-watch/db"
 	"what-to-watch/shows"
 )
 
 func main() {
-	cw, err := shows.GetCurrentlyWatching()
+	s, err := db.ReadShows()
+	if err != nil {
+		log.Fatalf("error reading shows: %s", err)
+	}
+
+	cw, err := shows.GetCurrentlyWatching(s)
 	if err != nil {
 		log.Fatalf("error getting currently watching shows: %s", err)
 	}
@@ -72,7 +79,7 @@ func main() {
 		i++
 	}
 
-	// Prompt user to mark a show as watched
+	// prompt user to mark a show as watched
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("\nEnter the Index of the show you watched (0 to cancel): ")
 	input, _ := reader.ReadString('\n')
@@ -87,14 +94,17 @@ func main() {
 		return
 	}
 
-	msg, err := shows.MarkEpisodeWatched(idx)
+	// update show watched
+	updatedShows, msg, err := shows.MarkEpisodeWatched(s, idx)
 	if err != nil {
 		fmt.Printf("error updating show: %s\n", err)
 		return
 	}
-	if msg != "" {
-		fmt.Println(msg)
-	} else {
-		fmt.Println("Updated show progress.")
+	fmt.Println(msg)
+
+	// save updated shows
+	if err := db.WriteShows(updatedShows); err != nil {
+		fmt.Printf("error saving updated shows: %s\n", err)
+		return
 	}
 }
