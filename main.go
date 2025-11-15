@@ -5,46 +5,17 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"what-to-watch/db"
+	"what-to-watch/shows"
 )
 
 func main() {
-	shows, err := db.ReadShows()
+	cw, err := shows.GetCurrentlyWatching()
 	if err != nil {
-		log.Fatalf("reading shows: %v", err)
+		log.Fatalf("error getting currently watching shows: %s", err)
 	}
 
-	// collect rows for shows that have currentSeries or currentEpisode
-	type row struct {
-		Name     string
-		Genre    string
-		Provider string
-		Series   string
-		Episode  string
-	}
-
-	var rows []row
-	for _, s := range shows {
-		if s.CurrentSeries != nil || s.CurrentEpisode != nil {
-			series := "-"
-			episode := "-"
-			if s.CurrentSeries != nil {
-				series = strconv.Itoa(*s.CurrentSeries)
-			}
-			if s.CurrentEpisode != nil {
-				episode = strconv.Itoa(*s.CurrentEpisode)
-			}
-			rows = append(rows, row{
-				Name:     s.Name,
-				Genre:    s.Genre,
-				Provider: s.Provider,
-				Series:   series,
-				Episode:  episode,
-			})
-		}
-	}
-
-	if len(rows) == 0 {
+	if len(cw) == 0 {
+		fmt.Println("You are not currently watching any shows.")
 		return
 	}
 
@@ -56,7 +27,7 @@ func main() {
 	wSeries := len("Series")
 	wEpisode := len("Episode")
 
-	for _, r := range rows {
+	for _, r := range cw {
 		if l := len(r.Name); l > wName {
 			wName = l
 		}
@@ -94,7 +65,7 @@ func main() {
 
 	// rows
 	i := 1
-	for _, r := range rows {
+	for _, r := range cw {
 		fmt.Printf(format, strconv.Itoa(i), r.Name, r.Genre, r.Provider, r.Series, r.Episode)
 		i++
 	}
