@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -19,7 +21,25 @@ type Show struct {
 }
 
 func main() {
-	data, err := os.ReadFile("shows.json")
+	// Try to get path relative to executable first (for built binaries)
+	var showsPath string
+	exePath, err := os.Executable()
+	if err == nil {
+		exeDir := filepath.Dir(exePath)
+		candidatePath := filepath.Join(exeDir, "shows.json")
+		if _, err := os.Stat(candidatePath); err == nil {
+			showsPath = candidatePath
+		}
+	}
+
+	// Fall back to source directory (for go run during development)
+	if showsPath == "" {
+		_, currentFile, _, _ := runtime.Caller(0)
+		sourceDir := filepath.Dir(currentFile)
+		showsPath = filepath.Join(sourceDir, "shows.json")
+	}
+
+	data, err := os.ReadFile(showsPath)
 	if err != nil {
 		log.Fatalf("reading shows.json: %v", err)
 	}
