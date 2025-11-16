@@ -12,3 +12,9 @@ type Show struct {
 	CurrentEpisode *int   `json:"currentEpisode,omitempty"`
 	Episode        string `json:"-"`
 }
+
+type Film struct {
+	Name     string `json:"name"`
+	Genre    string `json:"genre"`
+	Provider string `json:"provider"`
+}

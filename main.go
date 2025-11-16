@@ -13,6 +13,28 @@ import (
 )
 
 func main() {
+	reader := bufio.NewReader(os.Stdin)
+
+	// Display menu
+	fmt.Println("What would you like to view?")
+	fmt.Println("1. Currently watching shows")
+	fmt.Println("2. Films")
+	fmt.Print("Enter your choice (1 or 2): ")
+
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	switch input {
+	case "1":
+		viewShows(reader)
+	case "2":
+		viewFilms()
+	default:
+		fmt.Println("Invalid input. Please enter 1 or 2.")
+	}
+}
+
+func viewShows(reader *bufio.Reader) {
 	s, err := db.ReadShows()
 	if err != nil {
 		log.Fatalf("error reading shows: %s", err)
@@ -80,7 +102,6 @@ func main() {
 	}
 
 	// prompt user to mark a show as watched
-	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("\nEnter the Index of the show you watched (0 to cancel): ")
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
@@ -106,5 +127,56 @@ func main() {
 	if err := db.WriteShows(updatedShows); err != nil {
 		fmt.Printf("error saving updated shows: %s\n", err)
 		return
+	}
+}
+
+func viewFilms() {
+	films, err := db.ReadFilms()
+	if err != nil {
+		log.Fatalf("error reading films: %s", err)
+	}
+
+	if len(films) == 0 {
+		fmt.Println("No films found.")
+		return
+	}
+
+	// compute column widths
+	wIndex := len("Index")
+	wName := len("Name")
+	wGenre := len("Genre")
+	wProvider := len("Provider")
+
+	for _, f := range films {
+		if l := len(f.Name); l > wName {
+			wName = l
+		}
+		if l := len(f.Genre); l > wGenre {
+			wGenre = l
+		}
+		if l := len(f.Provider); l > wProvider {
+			wProvider = l
+		}
+	}
+
+	// build format string (left-aligned columns, two spaces between)
+	format := fmt.Sprintf("%%-%ds  %%-%ds  %%-%ds  %%-%ds\n",
+		wIndex, wName, wGenre, wProvider)
+
+	// header
+	fmt.Printf(format, "Index", "Name", "Genre", "Provider")
+
+	// separator line
+	parts := []string{
+		strings.Repeat("-", wIndex),
+		strings.Repeat("-", wName),
+		strings.Repeat("-", wGenre),
+		strings.Repeat("-", wProvider),
+	}
+	fmt.Printf(format, parts[0], parts[1], parts[2], parts[3])
+
+	// rows
+	for i, f := range films {
+		fmt.Printf(format, strconv.Itoa(i+1), f.Name, f.Genre, f.Provider)
 	}
 }

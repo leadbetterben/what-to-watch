@@ -30,6 +30,26 @@ func ReadShows() ([]data.Show, error) {
 	return shows, nil
 }
 
+// ReadFilms reads the films from the films.json file and returns a slice of Film structs.
+func ReadFilms() ([]data.Film, error) {
+	fullPath := getFullPath("films.json")
+	if fullPath == "" {
+		return nil, fmt.Errorf("ReadFilms: could not determine full path to films.json")
+	}
+
+	raw, err := os.ReadFile(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("ReadFilms: error reading file \n err=%w fullPath=%s", err, fullPath)
+	}
+
+	var films []data.Film
+	if err := json.Unmarshal(raw, &films); err != nil {
+		return nil, err
+	}
+
+	return films, nil
+}
+
 // WriteShows writes the provided shows slice to the shows.json file.
 // It writes to a temporary file in the same directory and renames it
 // to avoid corrupting the file on failure.
