@@ -1,7 +1,7 @@
 Repository summary
 
-- This is a small command-line Go program named `what-to-watch` that stores and displays TV shows a user is currently watching and allows marking episodes as watched.
-- Languages / runtimes: Go only (module `what-to-watch`). The repository is tiny (~10–15 source files). Key dirs: `db/`, `data/`, `shows/`, `plans/`.
+- This is a small command-line Go program named `what-to-watch` that stores and displays TV shows a user is currently watching, allows marking episodes as watched, and displays a collection of films.
+- Languages / runtimes: Go only (module `what-to-watch`). The repository is tiny (~15–20 source files). Key dirs: `db/`, `data/`, `shows/`, `plans/`.
 
 Top-level facts the agent should trust (no search needed unless instructions are wrong)
 
@@ -43,22 +43,22 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
 6) Lint / formatting:
 
-   No linter config (golangci-lint, etc.) found in repo. Always run `gofmt -w .` and consider `go vet ./...` before creating a PR. If the project later adds a linter or config file, follow that instead.
+   No linter config (golangci-lint, etc.) found in repo.
 
 Important environment/workflow notes
 
 - CI: `.github/workflows/go.yml` is the single GitHub Actions workflow. It runs on `push` and `pull_request` to `main` and uses Go 1.25.4. To avoid surprises, match that Go version locally or use the same action in a test run.
-- File I/O: `db.ReadShows()` looks for `shows.json` near the executable first, then falls back to the source `db` directory. This means:
-  - Built binaries may expect `shows.json` to live next to the binary.
-  - `go run .` and tests will find `db/shows.json` in the source tree.
+- File I/O: `db.ReadShows()` and `db.ReadFilms()` look for their respective JSON files near the executable first, then fall back to the source `db` directory. This means:
+  - Built binaries may expect `shows.json` and `films.json` to live next to the binary.
+  - `go run .` and tests will find `db/shows.json` and `db/films.json` in the source tree.
   - When writing (`db.WriteShows`), the code writes atomically (temp file then rename) to the discovered `shows.json` path.
 - Tests do not modify on-disk JSON; unit tests use in-memory `data.Show` slices. PRs that change the JSON files should be careful to not accidentally commit runtime-modified files.
 
 Project layout (high-value paths and files to edit)
 
-- `main.go` — program entry point: reads shows, prints currently-watching rows, prompts for an index, marks episode watched, writes file.
-- `db/db.go` — functions to read/write `shows.json` and `getFullPath` logic.
-- `data/data.go` — `Show` struct definition used across the project.
+- `main.go` — program entry point: displays a menu, routes to shows or films view. Shows view reads shows, prints currently-watching rows, prompts for index, marks episode watched, writes file. Films view reads and displays films.
+- `db/db.go` — functions to read/write `shows.json` and `films.json`, plus `getFullPath` logic.
+- `data/data.go` — `Show` and `Film` struct definitions used across the project.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`.
 - `shows/shows_test.go` — unit tests for `shows` package (good examples of expected behavior).
 - `db/shows.json` — canonical on-disk data used during `go run .` (do not assume tests use it).
@@ -73,7 +73,6 @@ Quick validation guidance for the agent making changes
 
 - Always run locally before opening a PR: `go build ./...` then `go test ./...`.
 - Ensure your Go tool version matches CI (1.25.4). If you cannot install that version locally, run CI-oriented checks in a container or use `actions/setup-go` locally in a disposable runner.
-- Run `gofmt -w .` and `go vet ./...` to catch style and basic issues even though no linter is configured.
 - If the change touches file I/O, double-check `db.getFullPath` semantics: built binaries and `go run` resolve files differently.
 - Unit tests live in `shows/` — read `shows/shows_test.go` to understand expected business behavior. Use those tests as a model for new tests.
 
@@ -91,8 +90,9 @@ Trust this file first
 Short content snapshot (high-priority snippets)
 
 - `go.mod`: `go 1.25.4`
-- `main.go`: entrypoint that calls `db.ReadShows()`, `shows.GetCurrentlyWatching()`, `shows.MarkEpisodeWatched()`, then `db.WriteShows()`.
-- `db/db.go`: `ReadShows()` and `WriteShows()` plus `getFullPath` (see above notes about exe vs source lookup).
+- `main.go`: entrypoint that displays menu (options 1 for shows, 2 for films). Shows flow calls `db.ReadShows()`, `shows.GetCurrentlyWatching()`, `shows.MarkEpisodeWatched()`, then `db.WriteShows()`. Films flow calls `db.ReadFilms()` and displays table.
+- `db/db.go`: `ReadShows()`, `WriteShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).
+- `data/data.go`: `Show` struct (with episode tracking) and `Film` struct (simple name/genre/provider).
 - `shows/shows.go`: contains `GetCurrentlyWatching` and `MarkEpisodeWatched` business logic (tests in `shows/shows_test.go`).
 
 If anything in this file is inconsistent with the repo state, run `git status` and search the few files listed above before making changes.

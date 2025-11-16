@@ -6,20 +6,18 @@ Purpose
 Environment & Tooling
 - Go toolchain: `go 1.25.4` (use the version in `go.mod` and CI).
 - Shell used for commands in examples: Windows PowerShell (v5.1).
-- Formatting: run `gofmt -w .` before committing. Optionally run `go vet ./...`.
 
 Key files and intent
-- `main.go` — program entrypoint; reads shows, prompts user, updates JSON.
-- `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json`.
-- `data/data.go` — `Show` struct and model types used across packages.
+- `main.go` — program entrypoint; displays a menu and routes to either shows or films view. Shows view reads shows, prompts user, and updates JSON; films view reads and displays `films.json`.
+- `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `WriteShows`, and `ReadFilms`).
+- `data/data.go` — `Show` and `Film` struct types used across packages.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching` and `MarkEpisodeWatched`.
 - `shows/shows_test.go` — unit tests for `shows` package (fast, in-memory).
-- `db/shows.json` — canonical on-disk data used when running `go run .`.
+- `db/shows.json` and `db/films.json` — canonical on-disk data used when running `go run .`.
 
 Common Commands (PowerShell)
 ```
 go version
-gofmt -w .
 go build ./...
 go test ./...
 go run .
@@ -42,7 +40,6 @@ Testing & Validation
 - Tests should not rely on `db/shows.json` being modified — tests use in-memory data.
 - After implementing changes, run:
 ```
-gofmt -w .
 go vet ./...
 go test ./...
 ```
@@ -61,6 +58,7 @@ Documentation
 
 Data and File I/O Notes
 - `db.ReadShows()` searches for `shows.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `shows.json` next to the binary, whereas `go run .` finds the source `db/shows.json`.
+- `db.ReadFilms()` searches for `films.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `films.json` next to the binary, whereas `go run .` finds the source `db/filmms.json`.
 - `db.WriteShows()` writes atomically (temp file then rename). Be careful not to accidentally commit runtime-modified JSON files.
 
 Agent Behaviour & Tooling Conventions
@@ -72,7 +70,7 @@ Agent Behaviour & Tooling Conventions
 - After groups of changes or several tool calls, return a concise progress update (1–2 sentences).
 -
 Plans Directory
-- All AI-generated plans must be saved in the `plans/` directory as Markdown files (`*.md`). Keep filenames descriptive (for example `ISSUE-2-plan.md`) and include clear steps, acceptance criteria, and any commands or files changed.
+- All AI-generated plans must be saved in the `plans/` directory as Markdown files (`*.md`). Keep filenames descriptive (for example `3-show-films.md`) and include clear steps, acceptance criteria, and any commands or files changed.
 
 Safety and Scope
 - Do not introduce untrusted external dependencies unless necessary and approved.
