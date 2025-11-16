@@ -55,7 +55,7 @@ Add functionality to display films from `films.json` as an alternative to shows.
 - [ ] Selecting option 2 displays films from `films.json` in table format
 - [ ] Invalid input (not 1 or 2) shows a useful error message and exits gracefully
 - [ ] `db.ReadFilms()` successfully reads and parses `films.json`
-- [ ] Code follows existing style and patterns (gofmt, consistent naming)
+- [ ] Code follows existing style and patterns (consistent naming)
 - [ ] All existing tests still pass
 - [ ] New or modified code builds without errors
 
@@ -68,7 +68,6 @@ Add functionality to display films from `films.json` as an alternative to shows.
 ## Validation Commands
 ```powershell
 go version
-gofmt -w .
 go vet ./...
 go build ./...
 go test ./...

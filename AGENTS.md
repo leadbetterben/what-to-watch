@@ -6,7 +6,6 @@ Purpose
 Environment & Tooling
 - Go toolchain: `go 1.25.4` (use the version in `go.mod` and CI).
 - Shell used for commands in examples: Windows PowerShell (v5.1).
-- Formatting: run `gofmt -w .` before committing. Optionally run `go vet ./...`.
 
 Key files and intent
 - `main.go` — program entrypoint; reads shows, prompts user, updates JSON.
@@ -19,7 +18,6 @@ Key files and intent
 Common Commands (PowerShell)
 ```
 go version
-gofmt -w .
 go build ./...
 go test ./...
 go run .
@@ -42,7 +40,6 @@ Testing & Validation
 - Tests should not rely on `db/shows.json` being modified — tests use in-memory data.
 - After implementing changes, run:
 ```
-gofmt -w .
 go vet ./...
 go test ./...
 ```

@@ -43,7 +43,7 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
 6) Lint / formatting:
 
-   No linter config (golangci-lint, etc.) found in repo. Always run `gofmt -w .` and consider `go vet ./...` before creating a PR. If the project later adds a linter or config file, follow that instead.
+   No linter config (golangci-lint, etc.) found in repo.
 
 Important environment/workflow notes
 
@@ -73,7 +73,6 @@ Quick validation guidance for the agent making changes
 
 - Always run locally before opening a PR: `go build ./...` then `go test ./...`.
 - Ensure your Go tool version matches CI (1.25.4). If you cannot install that version locally, run CI-oriented checks in a container or use `actions/setup-go` locally in a disposable runner.
-- Run `gofmt -w .` and `go vet ./...` to catch style and basic issues even though no linter is configured.
 - If the change touches file I/O, double-check `db.getFullPath` semantics: built binaries and `go run` resolve files differently.
 - Unit tests live in `shows/` — read `shows/shows_test.go` to understand expected business behavior. Use those tests as a model for new tests.
 
