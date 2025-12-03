@@ -58,5 +58,10 @@
         "name": "The Fantastic 4 First Steps",
         "genre": "marvel",
         "provider": "Disney+"
+    },
+    {
+        "name": "A House of Dynamite",
+        "genre": "thriller",
+        "provider": "Netflix"
     }
 ]
