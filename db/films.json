@@ -63,5 +63,10 @@
         "name": "A House of Dynamite",
         "genre": "thriller",
         "provider": "Netflix"
+    },
+    {
+        "name": "The Roses",
+        "genre": "comedy",
+        "provider": "Disney+"
     }
 ]
