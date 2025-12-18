@@ -68,5 +68,10 @@
         "name": "The Roses",
         "genre": "comedy",
         "provider": "Disney+"
+    },
+    {
+        "name": "Wake Up Dead Man",
+        "genre": "mystery",
+        "provider": "Netflix"
     }
 ]
