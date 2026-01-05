@@ -822,5 +822,22 @@
       4
     ],
     "provider": "BBC iPlayer"
+  },
+  {
+    "name": "Rich and Morty",
+    "genre": "comedy",
+    "episodes": [
+      11,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "provider": "Netflix",
+    "currentSeries": 8,
+    "currentEpisode": 1
   }
 ]
