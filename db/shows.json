@@ -359,16 +359,6 @@
     "provider": "BBC iPlayer"
   },
   {
-    "name": "This City Is Ours",
-    "genre": "drama",
-    "episodes": [
-      8
-    ],
-    "provider": "BBC iPlayer",
-    "currentSeries": 1,
-    "currentEpisode": 7
-  },
-  {
     "name": "How Are You? It's Alan (Partridge)",
     "genre": "comedy",
     "episodes": [
@@ -839,5 +829,14 @@
     "provider": "Netflix",
     "currentSeries": 8,
     "currentEpisode": 1
+  },
+  {
+    "name": "Things You Should Have Done",
+    "genre": "comedy",
+    "episodes": [
+      6,
+      6
+    ],
+    "provider":"BBC iPlayer"
   }
 ]
