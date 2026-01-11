@@ -437,8 +437,8 @@
       6
     ],
     "provider": "BBC iPlayer",
-    "currentSeries": 6,
-    "currentEpisode": 10
+    "currentSeries": 7,
+    "currentEpisode": 1
   },
   {
     "name": "Red Dwarf",
@@ -837,6 +837,6 @@
       6,
       6
     ],
-    "provider":"BBC iPlayer"
+    "provider": "BBC iPlayer"
   }
 ]
