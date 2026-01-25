@@ -1,4 +1,5 @@
 # what-to-watch
+
 Finds a series, TV show, or film to watch
 
 This program provides a menu to view either TV shows you are currently watching or films you want to watch.
@@ -18,7 +19,8 @@ See GitHub Issues for future plans. New Issues and Pull Requests are welcome.
 Run `go run .` from the repository to run the program.
 
 You will see a menu:
-```
+
+```text
 What would you like to view?
 1. Currently watching shows
 2. Films
