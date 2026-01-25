@@ -12,14 +12,9 @@ import (
 
 // ReadShows reads the shows from the shows.json file and returns a slice of Show structs.
 func ReadShows() ([]data.Show, error) {
-	fullPath := getFullPath("shows.json")
-	if fullPath == "" {
-		return nil, fmt.Errorf("ReadShows: could not determine full path to shows.json")
-	}
-
-	raw, err := os.ReadFile(fullPath)
+	raw, err := readFile("shows.json")
 	if err != nil {
-		return nil, fmt.Errorf("readFile: error reading file \n err=%w fullPath=%s", err, fullPath)
+		return nil, fmt.Errorf("ReadShows: error reading file \n err=%w", err)
 	}
 
 	var shows []data.Show
@@ -32,14 +27,9 @@ func ReadShows() ([]data.Show, error) {
 
 // ReadFilms reads the films from the films.json file and returns a slice of Film structs.
 func ReadFilms() ([]data.Film, error) {
-	fullPath := getFullPath("films.json")
-	if fullPath == "" {
-		return nil, fmt.Errorf("ReadFilms: could not determine full path to films.json")
-	}
-
-	raw, err := os.ReadFile(fullPath)
+	raw, err := readFile("films.json")
 	if err != nil {
-		return nil, fmt.Errorf("ReadFilms: error reading file \n err=%w fullPath=%s", err, fullPath)
+		return nil, fmt.Errorf("ReadFilms: error reading file \n err=%w", err)
 	}
 
 	var films []data.Film
@@ -110,4 +100,19 @@ func getFullPath(path string) (fullPath string) {
 	}
 
 	return
+}
+
+// readFile reads the contents of the file at the given path.
+func readFile(path string) ([]byte, error) {
+	fullPath := getFullPath(path)
+	if fullPath == "" {
+		return nil, fmt.Errorf("readFile: could not determine full path to %s", path)
+	}
+
+	raw, err := os.ReadFile(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("ReadFilms: error reading file \n err=%w path=%s fullPath=%s", err, path, fullPath)
+	}
+
+	return raw, nil
 }
