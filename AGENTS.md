@@ -12,7 +12,7 @@ Environment & Tooling
 Key files and intent
 
 - `main.go` — dispatcher: parses flags (`-mode=cli|http`, `-port=PORT`), routes to CLI or HTTP mode.
-- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `FormatShowsTable()`, `FormatFilmsTable()`.
+- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`
 - `cmd/cli/cli.go` — interactive CLI interface; calls handlers.
 - `cmd/http/http.go` — HTTP REST API server; calls same handlers. Endpoints: `/health`, `/api/shows`, `/api/shows/mark?index=X`, `/api/films`.
 - `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `WriteShows`, and `ReadFilms`).

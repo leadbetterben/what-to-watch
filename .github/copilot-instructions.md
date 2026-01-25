@@ -9,8 +9,6 @@ Architecture and handler details:
   - `GetCurrentlyWatchingShows()` — Retrieves currently watching shows
   - `MarkShowWatched(idx)` — Marks a show episode as watched
   - `GetAllFilms()` — Retrieves all films
-  - `FormatShowsTable()` — Formats shows for display
-  - `FormatFilmsTable()` — Formats films for display
 - `cmd/cli/cli.go` — Interactive CLI interface that calls the handlers
 - `cmd/http/http.go` — HTTP REST API that calls the same handlers
 - `main.go` — Dispatcher: parses flags, routes to CLI or HTTP mode
@@ -80,7 +78,7 @@ Important environment/workflow notes
 Project layout (high-value paths and files to edit)
 
 - `main.go` — dispatcher: parses flags, routes to CLI or HTTP mode
-- `handlers/handlers.go` — business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `FormatShowsTable()`, `FormatFilmsTable()`
+- `handlers/handlers.go` — business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`
 - `cmd/cli/cli.go` — CLI interface
 - `cmd/http/http.go` — HTTP REST API
 - `db/db.go` — functions to read/write `shows.json` and `films.json`, plus `getFullPath` logic.

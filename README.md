@@ -76,8 +76,6 @@ The program uses consistent handler functions that can be called by either inter
   - `GetCurrentlyWatchingShows()` — Retrieves currently watching shows
   - `MarkShowWatched(idx)` — Marks a show episode as watched
   - `GetAllFilms()` — Retrieves all films
-  - `FormatShowsTable()` — Formats shows for display
-  - `FormatFilmsTable()` — Formats films for display
 - **`cmd/cli/cli.go`** — Interactive CLI interface that calls the handlers
 - **`cmd/http/http.go`** — HTTP REST API that calls the same handlers
 
