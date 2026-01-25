@@ -11,7 +11,10 @@ Environment & Tooling
 
 Key files and intent
 
-- `main.go` — program entrypoint; displays a menu and routes to either shows or films view. Shows view reads shows, prompts user, and updates JSON; films view reads and displays `films.json`.
+- `main.go` — dispatcher: parses flags (`-mode=cli|http`, `-port=PORT`), routes to CLI or HTTP mode.
+- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `FormatShowsTable()`, `FormatFilmsTable()`.
+- `cmd/cli/cli.go` — interactive CLI interface; calls handlers.
+- `cmd/http/http.go` — HTTP REST API server; calls same handlers. Endpoints: `/health`, `/api/shows`, `/api/shows/mark?index=X`, `/api/films`.
 - `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `WriteShows`, and `ReadFilms`).
 - `data/data.go` — `Show` and `Film` struct types used across packages.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching` and `MarkEpisodeWatched`.
@@ -24,7 +27,8 @@ Common Commands (PowerShell)
 go version
 go build ./...
 go test ./...
-go run .
+go run .              # CLI mode (default)
+go run . -mode=http   # HTTP mode on default port 8080
 ```
 
 Agent Workflow Expectations
@@ -57,6 +61,15 @@ Committing & PRs
 - Commit messages should be concise and descriptive.
 - Before opening a PR, ensure `go build ./...` and `go test ./...` pass.
 - CI runs `go build -v ./...` and `go test -v ./...` on Go 1.25.4; target the same locally.
+
+Handler Architecture
+
+The program is refactored to support both CLI and HTTP modes using consistent handler functions:
+
+- Both `cmd/cli/` and `cmd/http/` call identical handler functions from `handlers/handlers.go`
+- This ensures the same business logic applies regardless of interface
+- Single source of truth: changes to logic only need to be made once
+- Easy to extend: adding features updates both CLI and HTTP simultaneously
 
 Documentation
 

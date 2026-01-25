@@ -1,7 +1,19 @@
 Repository summary
 
-- This is a small command-line Go program named `what-to-watch` that stores and displays TV shows a user is currently watching, allows marking episodes as watched, and displays a collection of films.
-- Languages / runtimes: Go only (module `what-to-watch`). The repository is tiny (~15–20 source files). Key dirs: `db/`, `data/`, `shows/`, `plans/`.
+- This Go program (`what-to-watch`) can be run as an interactive CLI or as an HTTP server, both using the same business logic for consistency.
+- Languages / runtimes: Go only (module `what-to-watch`). The repository is small (~25 source files). Key dirs: `db/`, `data/`, `shows/`, `handlers/`, `cmd/cli/`, `cmd/http/`, `plans/`.
+
+Architecture and handler details:
+
+- `handlers/handlers.go` — Core business logic functions:
+  - `GetCurrentlyWatchingShows()` — Retrieves currently watching shows
+  - `MarkShowWatched(idx)` — Marks a show episode as watched
+  - `GetAllFilms()` — Retrieves all films
+  - `FormatShowsTable()` — Formats shows for display
+  - `FormatFilmsTable()` — Formats films for display
+- `cmd/cli/cli.go` — Interactive CLI interface that calls the handlers
+- `cmd/http/http.go` — HTTP REST API that calls the same handlers
+- `main.go` — Dispatcher: parses flags, routes to CLI or HTTP mode
 
 Top-level facts the agent should trust (no search needed unless instructions are wrong)
 
@@ -25,23 +37,34 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
    Observed: successful build with no errors.
 
-3) Run (development):
+3) Run (CLI mode):
 
    `go run .`
+   `go run . -mode=cli`
 
    Behavior: runs the CLI and reads/writes `shows.json` via the `db` package. When run with `go run .` during development, `db.getFullPath` resolves the file relative to the source directory.
 
-4) Install (optional):
+4) Run (HTTP mode):
+
+   `go run . -mode=http -port=8080`
+
+   Starts HTTP server. Endpoints:
+     - `GET /health` — Health check
+     - `GET /api/shows` — Get currently watching shows (JSON)
+     - `POST /api/shows/mark?index=1` — Mark show as watched
+     - `GET /api/films` — Get all films (JSON)
+
+5) Install (optional):
 
    `go build` then `go install` — installs the binary to your `GOBIN`/`GOPATH`-based location if desired.
 
-5) Tests:
+6) Tests:
 
    `go test ./...`
 
    Observed results: `ok what-to-watch/shows 3.659s` (tests pass locally). The `data` and `db` packages have no tests. Running `go test ./...` in CI is the expected validation step.
 
-6) Lint / formatting:
+7) Lint / formatting:
 
    No linter config (golangci-lint, etc.) found in repo.
 
@@ -56,7 +79,10 @@ Important environment/workflow notes
 
 Project layout (high-value paths and files to edit)
 
-- `main.go` — program entry point: displays a menu, routes to shows or films view. Shows view reads shows, prints currently-watching rows, prompts for index, marks episode watched, writes file. Films view reads and displays films.
+- `main.go` — dispatcher: parses flags, routes to CLI or HTTP mode
+- `handlers/handlers.go` — business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `FormatShowsTable()`, `FormatFilmsTable()`
+- `cmd/cli/cli.go` — CLI interface
+- `cmd/http/http.go` — HTTP REST API
 - `db/db.go` — functions to read/write `shows.json` and `films.json`, plus `getFullPath` logic.
 - `data/data.go` — `Show` and `Film` struct definitions used across the project.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`.
@@ -90,7 +116,8 @@ Trust this file first
 Short content snapshot (high-priority snippets)
 
 - `go.mod`: `go 1.25.4`
-- `main.go`: entrypoint that displays menu (options 1 for shows, 2 for films). Shows flow calls `db.ReadShows()`, `shows.GetCurrentlyWatching()`, `shows.MarkEpisodeWatched()`, then `db.WriteShows()`. Films flow calls `db.ReadFilms()` and displays table.
+- `main.go`: dispatcher with CLI/HTTP routing. CLI: menu for shows/films. HTTP: endpoints for shows/films/mark/health.
+- `handlers/handlers.go`: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `FormatShowsTable()`, `FormatFilmsTable()`
 - `db/db.go`: `ReadShows()`, `WriteShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).
 - `data/data.go`: `Show` struct (with episode tracking) and `Film` struct (simple name/genre/provider).
 - `shows/shows.go`: contains `GetCurrentlyWatching` and `MarkEpisodeWatched` business logic (tests in `shows/shows_test.go`).
