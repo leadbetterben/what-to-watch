@@ -62,12 +62,12 @@ func TestGetCurrentlyWatching(t *testing.T) {
 
 func TestMarkEpisodeWatched(t *testing.T) {
 	tests := []struct {
-		name        string
-		shows       []data.Show
-		listIndex   int
-		expected    []data.Show
-		expectedMsg string
-		expectError bool
+		name           string
+		shows          []data.Show
+		listIndex      int
+		expected       []data.Show
+		expectedFinish bool
+		expectError    bool
 	}{
 		{
 			name: "increment episode within series",
@@ -78,8 +78,8 @@ func TestMarkEpisodeWatched(t *testing.T) {
 			expected: []data.Show{
 				{Name: "Show A", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)},
 			},
-			expectedMsg: "Updated show progress.",
-			expectError: false,
+			expectedFinish: false,
+			expectError:    false,
 		},
 		{
 			name: "rollover to next series",
@@ -90,8 +90,8 @@ func TestMarkEpisodeWatched(t *testing.T) {
 			expected: []data.Show{
 				{Name: "Show B", Episodes: []int{2, 3}, CurrentSeries: intPtr(2), CurrentEpisode: intPtr(1)},
 			},
-			expectedMsg: "Updated show progress.",
-			expectError: false,
+			expectedFinish: false,
+			expectError:    false,
 		},
 		{
 			name: "finish show when past last series",
@@ -102,62 +102,62 @@ func TestMarkEpisodeWatched(t *testing.T) {
 			expected: []data.Show{
 				{Name: "Show C", Episodes: []int{1, 1}, CurrentSeries: nil, CurrentEpisode: nil},
 			},
-			expectedMsg: "Congratulations! You finished Show C.",
-			expectError: false,
+			expectedFinish: true,
+			expectError:    false,
 		},
 		{
-			name:        "invalid (non-positive) index",
-			shows:       []data.Show{},
-			listIndex:   0,
-			expected:    nil,
-			expectedMsg: "",
-			expectError: true,
+			name:           "invalid (non-positive) index",
+			shows:          []data.Show{},
+			listIndex:      0,
+			expected:       nil,
+			expectedFinish: false,
+			expectError:    true,
 		},
 		{
 			name: "index out of range",
 			shows: []data.Show{
 				{Name: "Show D", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
 			},
-			listIndex:   2,
-			expected:    nil,
-			expectedMsg: "",
-			expectError: true,
+			listIndex:      2,
+			expected:       nil,
+			expectedFinish: false,
+			expectError:    true,
 		},
 		{
 			name: "selected show not marked as watching",
 			shows: []data.Show{
 				{Name: "Show E", Episodes: []int{3}},
 			},
-			listIndex:   1,
-			expected:    nil,
-			expectedMsg: "",
-			expectError: true,
+			listIndex:      1,
+			expected:       nil,
+			expectedFinish: false,
+			expectError:    true,
 		},
 		{
 			name: "selected show not marked as watching for series only",
 			shows: []data.Show{
 				{Name: "Show E", Episodes: []int{3}, CurrentEpisode: intPtr(1)},
 			},
-			listIndex:   1,
-			expected:    nil,
-			expectedMsg: "",
-			expectError: true,
+			listIndex:      1,
+			expected:       nil,
+			expectedFinish: false,
+			expectError:    true,
 		},
 		{
 			name: "selected show not marked as watching for episode only",
 			shows: []data.Show{
 				{Name: "Show E", Episodes: []int{3}, CurrentSeries: intPtr(1)},
 			},
-			listIndex:   1,
-			expected:    nil,
-			expectedMsg: "",
-			expectError: true,
+			listIndex:      1,
+			expected:       nil,
+			expectedFinish: false,
+			expectError:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, msg, err := MarkEpisodeWatched(tt.shows, tt.listIndex)
+			result, finish, err := MarkEpisodeWatched(tt.shows, tt.listIndex)
 			if tt.expectError {
 				if err == nil {
 					t.Fatalf("expected error but got none")
@@ -173,8 +173,8 @@ func TestMarkEpisodeWatched(t *testing.T) {
 				t.Errorf("expected %+v, got %+v", tt.expected, result)
 			}
 
-			if msg != tt.expectedMsg {
-				t.Errorf("expected message %q, got %q", tt.expectedMsg, msg)
+			if finish != tt.expectedFinish {
+				t.Errorf("expected finish %v, got %v", tt.expectedFinish, finish)
 			}
 		})
 	}

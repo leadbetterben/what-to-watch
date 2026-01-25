@@ -1,0 +1,96 @@
+[
+  {
+    "name": "The Big Bang Theory",
+    "genre": "comedy",
+    "episodes": [
+      17,
+      23,
+      23,
+      24,
+      24,
+      24,
+      24,
+      24,
+      24,
+      24,
+      24,
+      24
+    ],
+    "provider": "Netflix",
+    "currentSeries": 11,
+    "currentEpisode": 6
+  },
+  {
+    "name": "Tour De France Unchained",
+    "genre": "documentary",
+    "episodes": [
+      8,
+      8,
+      8
+    ],
+    "provider": "Netflix",
+    "currentSeries": 3,
+    "currentEpisode": 1
+  },
+  {
+    "name": "Two Pints of Lager and A Packet of Crisps",
+    "genre": "comedy",
+    "episodes": [
+      6,
+      6,
+      11,
+      8,
+      14,
+      10,
+      8,
+      8,
+      2,
+      6
+    ],
+    "provider": "BBC iPlayer",
+    "currentSeries": 7,
+    "currentEpisode": 1
+  },
+  {
+    "name": "What If...?",
+    "genre": "marvel",
+    "episodes": [
+      9,
+      9,
+      8
+    ],
+    "provider": "Disney+",
+    "currentSeries": 2,
+    "currentEpisode": 6
+  },
+  {
+    "name": "Welcome to Wrexham",
+    "genre": "documentary",
+    "episodes": [
+      18,
+      15,
+      8,
+      8
+    ],
+    "provider": "Disney+",
+    "currentSeries": 4,
+    "currentEpisode": 1
+  },
+  {
+    "name": "Rick and Morty",
+    "genre": "comedy",
+    "episodes": [
+      11,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "provider": "Netflix",
+    "currentSeries": 8,
+    "currentEpisode": 2
+  }
+]

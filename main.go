@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"what-to-watch/data"
 	"what-to-watch/db"
 	"what-to-watch/shows"
 )
@@ -35,19 +36,9 @@ func main() {
 }
 
 func viewShows(reader *bufio.Reader) {
-	s, err := db.ReadShows()
+	s, err := getCurrentlyWatching()
 	if err != nil {
 		log.Fatalf("error reading shows: %s", err)
-	}
-
-	cw, err := shows.GetCurrentlyWatching(s)
-	if err != nil {
-		log.Fatalf("error getting currently watching shows: %s", err)
-	}
-
-	if len(cw) == 0 {
-		fmt.Println("You are not currently watching any shows.")
-		return
 	}
 
 	// compute column widths
@@ -58,7 +49,7 @@ func viewShows(reader *bufio.Reader) {
 	wSeries := len("Series")
 	wEpisode := len("Episode")
 
-	for _, r := range cw {
+	for _, r := range s {
 		if l := len(r.Name); l > wName {
 			wName = l
 		}
@@ -96,7 +87,7 @@ func viewShows(reader *bufio.Reader) {
 
 	// rows
 	i := 1
-	for _, r := range cw {
+	for _, r := range s {
 		fmt.Printf(format, strconv.Itoa(i), r.Name, r.Genre, r.Provider, r.Series, r.Episode)
 		i++
 	}
@@ -115,19 +106,40 @@ func viewShows(reader *bufio.Reader) {
 		return
 	}
 
-	// update show watched
-	updatedShows, msg, err := shows.MarkEpisodeWatched(s, idx)
+	err = updateShowWatched(s, idx)
 	if err != nil {
-		fmt.Printf("error updating show: %s\n", err)
+		fmt.Printf("%s\n", err)
 		return
 	}
-	fmt.Println(msg)
+}
+
+func getCurrentlyWatching() ([]data.Show, error) {
+	s, err := db.ReadCurrentShows()
+	if err != nil {
+		return nil, fmt.Errorf("error reading shows: %w", err)
+	}
+
+	cw, err := shows.GetCurrentlyWatching(s)
+	if err != nil {
+		return nil, fmt.Errorf("error getting currently watching shows: %w", err)
+	}
+
+	return cw, nil
+}
+
+func updateShowWatched(s []data.Show, idx int) error {
+	// update show watched
+	updatedShows, _, err := shows.MarkEpisodeWatched(s, idx)
+	if err != nil {
+		return fmt.Errorf("error updating show \n err=%w", err)
+	}
 
 	// save updated shows
-	if err := db.WriteShows(updatedShows); err != nil {
-		fmt.Printf("error saving updated shows: %s\n", err)
-		return
+	if err := db.WriteCurrentShows(updatedShows); err != nil {
+		return fmt.Errorf("error saving updated shows \n err=%w", err)
 	}
+
+	return nil
 }
 
 func viewFilms() {

@@ -10,11 +10,11 @@ import (
 	"what-to-watch/data"
 )
 
-// ReadShows reads the shows from the shows.json file and returns a slice of Show structs.
-func ReadShows() ([]data.Show, error) {
-	raw, err := readFile("shows.json")
+// ReadCurrentShows reads the shows from the currentShows.json file and returns a slice of Show structs.
+func ReadCurrentShows() ([]data.Show, error) {
+	raw, err := readFile("currentShows.json")
 	if err != nil {
-		return nil, fmt.Errorf("ReadShows: error reading file \n err=%w", err)
+		return nil, fmt.Errorf("ReadCurrentShows: error reading file \n err=%w", err)
 	}
 
 	var shows []data.Show
@@ -40,25 +40,25 @@ func ReadFilms() ([]data.Film, error) {
 	return films, nil
 }
 
-// WriteShows writes the provided shows slice to the shows.json file.
+// WriteCurrentShows writes the provided shows slice to the currentShows.json file.
 // It writes to a temporary file in the same directory and renames it
 // to avoid corrupting the file on failure.
-func WriteShows(shows []data.Show) error {
+func WriteCurrentShows(shows []data.Show) error {
 	raw, err := json.MarshalIndent(shows, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	fullPath := getFullPath("shows.json")
+	fullPath := getFullPath("currentShows.json")
 	if fullPath == "" {
-		return fmt.Errorf("WriteShows: could not determine full path to shows.json")
+		return fmt.Errorf("WriteCurrentShows: could not determine full path to currentShows.json")
 	}
 
 	// create temp file in same directory to ensure atomic rename
 	dir := filepath.Dir(fullPath)
-	tmpFile, err := os.CreateTemp(dir, "shows-*.json.tmp")
+	tmpFile, err := os.CreateTemp(dir, "currentShows-*.json.tmp")
 	if err != nil {
-		return fmt.Errorf("WriteShows: error creating temp file \n err=%w fullPath=%s", err, fullPath)
+		return fmt.Errorf("WriteCurrentShows: error creating temp file \n err=%w fullPath=%s", err, fullPath)
 	}
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath)
@@ -66,15 +66,15 @@ func WriteShows(shows []data.Show) error {
 	// write to temp file
 	if _, err := tmpFile.Write(raw); err != nil {
 		tmpFile.Close()
-		return fmt.Errorf("WriteShows: error writing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("WriteCurrentShows: error writing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
 	}
 	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("WriteShows: error closing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("WriteCurrentShows: error closing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
 	}
 
 	// rename temp file to final file
 	if err := os.Rename(tmpPath, fullPath); err != nil {
-		return fmt.Errorf("WriteShows: error renaming temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("WriteCurrentShows: error renaming temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
 	}
 
 	return nil
