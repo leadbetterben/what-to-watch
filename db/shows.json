@@ -814,7 +814,7 @@
     "provider": "BBC iPlayer"
   },
   {
-    "name": "Rich and Morty",
+    "name": "Rick and Morty",
     "genre": "comedy",
     "episodes": [
       11,
@@ -828,7 +828,7 @@
     ],
     "provider": "Netflix",
     "currentSeries": 8,
-    "currentEpisode": 1
+    "currentEpisode": 2
   },
   {
     "name": "Things You Should Have Done",
@@ -838,5 +838,17 @@
       6
     ],
     "provider": "BBC iPlayer"
+  },
+  {
+    "name": "Solar Opposites",
+    "genre": "comedy",
+    "episodes": [
+      8,
+      9,
+      12,
+      12,
+      12
+    ],
+    "provider": "Netflix"
   }
 ]

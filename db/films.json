@@ -73,5 +73,10 @@
         "name": "Wake Up Dead Man",
         "genre": "mystery",
         "provider": "Netflix"
+    },
+    {
+        "name": "28 Days Later",
+        "genre": "horror",
+        "provider": "BBC iPlayer"
     }
 ]
