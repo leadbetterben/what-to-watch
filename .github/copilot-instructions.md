@@ -10,7 +10,8 @@ Architecture and handler details:
   - `MarkShowWatched(idx)` — Marks a show episode as watched
   - `GetAllFilms()` — Retrieves all films
 - `cmd/cli/cli.go` — Interactive CLI interface that calls the handlers
-- `cmd/http/http.go` — HTTP REST API that calls the same handlers
+- `cmd/http/http.go` — HTTP REST API that calls the same handlers; refactored with `Handler` interface for dependency injection
+- `cmd/http/http_test.go` — Table-driven tests for all HTTP handlers with mocked dependencies
 - `main.go` — Dispatcher: parses flags, routes to CLI or HTTP mode
 
 Top-level facts the agent should trust (no search needed unless instructions are wrong)
@@ -60,7 +61,7 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
    `go test ./...`
 
-   Observed results: `ok what-to-watch/shows 3.659s` (tests pass locally). The `data` and `db` packages have no tests. Running `go test ./...` in CI is the expected validation step.
+   Observed results: `ok what-to-watch/shows 3.659s` and `ok what-to-watch/cmd/http` (tests pass locally). The `data`, `db`, and `cli` packages have no tests. HTTP handler tests use table-driven approach with mocked `Handler` interface. Running `go test ./...` in CI is the expected validation step.
 
 7) Lint / formatting:
 
@@ -85,6 +86,7 @@ Project layout (high-value paths and files to edit)
 - `data/data.go` — `Show` and `Film` struct definitions used across the project.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`.
 - `shows/shows_test.go` — unit tests for `shows` package (good examples of expected behavior).
+- `cmd/http/http_test.go` — HTTP handler tests (table-driven, uses mocked `Handler` interface).
 - `db/shows.json` — canonical on-disk data used during `go run .` (do not assume tests use it).
 - `plans/` — contains AI-generated implementation plans; not used by code.
 - `.github/workflows/go.yml` — CI workflow that must pass for PRs.
@@ -98,7 +100,7 @@ Quick validation guidance for the agent making changes
 - Always run locally before opening a PR: `go build ./...` then `go test ./...`.
 - Ensure your Go tool version matches CI (1.25.4). If you cannot install that version locally, run CI-oriented checks in a container or use `actions/setup-go` locally in a disposable runner.
 - If the change touches file I/O, double-check `db.getFullPath` semantics: built binaries and `go run` resolve files differently.
-- Unit tests live in `shows/` — read `shows/shows_test.go` to understand expected business behavior. Use those tests as a model for new tests.
+- Unit tests live in `shows/` and `cmd/http/` — read `shows/shows_test.go` for business logic tests and `cmd/http/http_test.go` for HTTP handler tests as models.
 
 Where to search if instructions appear incomplete
 
@@ -119,6 +121,8 @@ Short content snapshot (high-priority snippets)
 - `db/db.go`: `ReadShows()`, `WriteShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).
 - `data/data.go`: `Show` struct (with episode tracking) and `Film` struct (simple name/genre/provider).
 - `shows/shows.go`: contains `GetCurrentlyWatching` and `MarkEpisodeWatched` business logic (tests in `shows/shows_test.go`).
+- `cmd/http/http.go`: defines `Handler` interface for dependency injection; `defaultHandler` implements it by calling `handlers` package functions.
+- `cmd/http/http_test.go`: table-driven tests for all HTTP handlers (`TestHandleGetShows`, `TestHandleMarkShowWatched`, `TestHandleGetFilms`, `TestHandleHealth`) with `mockHandler` providing test stubs.
 
 If anything in this file is inconsistent with the repo state, run `git status` and search the few files listed above before making changes.
 

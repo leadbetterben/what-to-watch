@@ -6,38 +6,81 @@ import (
 	"net/http"
 	"strconv"
 
+	"what-to-watch/data"
 	"what-to-watch/handlers"
 )
 
+// Handler defines the interface for business logic functions
+type Handler interface {
+	GetCurrentlyWatchingShows() ([]data.Show, error)
+	MarkShowWatched(idx int) (bool, error)
+	GetAllFilms() ([]data.Film, error)
+}
+
+// defaultHandler uses the handlers package functions
+type defaultHandler struct{}
+
+func (h *defaultHandler) GetCurrentlyWatchingShows() ([]data.Show, error) {
+	return handlers.GetCurrentlyWatchingShows()
+}
+
+func (h *defaultHandler) MarkShowWatched(idx int) (bool, error) {
+	return handlers.MarkShowWatched(idx)
+}
+
+func (h *defaultHandler) GetAllFilms() ([]data.Film, error) {
+	return handlers.GetAllFilms()
+}
+
 // Server holds the HTTP server instance
 type Server struct {
-	port int
+	port    int
+	handler Handler
 }
 
 // NewServer creates a new HTTP server
 func NewServer(port int) *Server {
-	return &Server{port: port}
+	return &Server{
+		port:    port,
+		handler: &defaultHandler{},
+	}
+}
+
+// NewServerWithHandler creates a new HTTP server with a custom handler (for testing)
+func NewServerWithHandler(port int, handler Handler) *Server {
+	return &Server{
+		port:    port,
+		handler: handler,
+	}
 }
 
 // Start begins listening for HTTP requests
 func (s *Server) Start() error {
-	http.HandleFunc("/api/shows", handleGetShows)
-	http.HandleFunc("/api/shows/mark", handleMarkShowWatched)
-	http.HandleFunc("/api/films", handleGetFilms)
-	http.HandleFunc("/health", handleHealth)
+	http.HandleFunc("/api/shows", func(w http.ResponseWriter, r *http.Request) {
+		s.handleGetShows(w, r)
+	})
+	http.HandleFunc("/api/shows/mark", func(w http.ResponseWriter, r *http.Request) {
+		s.handleMarkShowWatched(w, r)
+	})
+	http.HandleFunc("/api/films", func(w http.ResponseWriter, r *http.Request) {
+		s.handleGetFilms(w, r)
+	})
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		s.handleHealth(w, r)
+	})
 
 	addr := fmt.Sprintf(":%d", s.port)
 	fmt.Printf("HTTP server listening on port %d\n", s.port)
 	return http.ListenAndServe(addr, nil)
 }
 
-func handleGetShows(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetShows(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodError(w, http.MethodGet)
 		return
 	}
 
-	shows, err := handlers.GetCurrentlyWatchingShows()
+	shows, err := s.handler.GetCurrentlyWatchingShows()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -46,7 +89,7 @@ func handleGetShows(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, shows)
 }
 
-func handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		methodError(w, http.MethodPost)
 		return
@@ -64,7 +107,7 @@ func handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isCompleted, err := handlers.MarkShowWatched(showIdx)
+	isCompleted, err := s.handler.MarkShowWatched(showIdx)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -73,13 +116,13 @@ func handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, isCompleted)
 }
 
-func handleGetFilms(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGetFilms(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodError(w, http.MethodGet)
 		return
 	}
 
-	films, err := handlers.GetAllFilms()
+	films, err := s.handler.GetAllFilms()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -88,7 +131,7 @@ func handleGetFilms(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, films)
 }
 
-func handleHealth(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		methodError(w, http.MethodGet)
 		return

@@ -14,7 +14,8 @@ Key files and intent
 - `main.go` — dispatcher: parses flags (`-mode=cli|http`, `-port=PORT`), routes to CLI or HTTP mode.
 - `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`
 - `cmd/cli/cli.go` — interactive CLI interface; calls handlers.
-- `cmd/http/http.go` — HTTP REST API server; calls same handlers. Endpoints: `/health`, `/api/shows`, `/api/shows/mark?index=X`, `/api/films`.
+- `cmd/http/http.go` — HTTP REST API server; implements `Handler` interface pattern for dependency injection in tests.
+- `cmd/http/http_test.go` — Table-driven tests for all HTTP handler functions. Uses `mockHandler` to stub business logic calls.
 - `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `WriteShows`, and `ReadFilms`).
 - `data/data.go` — `Show` and `Film` struct types used across packages.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching` and `MarkEpisodeWatched`.
@@ -47,7 +48,8 @@ Editing & Patching
 
 Testing & Validation
 
-- Unit tests live under `shows/`. They are fast and authoritative for business logic.
+- Unit tests live under `shows/` for business logic and `cmd/http/` for HTTP handlers. They are fast and authoritative.
+- HTTP handler tests use table-driven approach with `mockHandler` implementing the `Handler` interface for dependency injection.
 - Tests should not rely on `db/shows.json` being modified — tests use in-memory data.
 - After implementing changes, run:
 
