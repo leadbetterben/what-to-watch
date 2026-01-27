@@ -36,32 +36,21 @@ func GetCurrentlyWatching(shows []data.Show) ([]data.Show, error) {
 
 // MarkEpisodeWatched updates the provided shows slice when the user reports they've
 // watched the next episode of a show. The parameter `listIndex` is 1-based and
-// corresponds to the index displayed by `GetCurrentlyWatching()`.
-// It returns the updated shows slice, a non-empty congratulations message if the
-// show was completed, and an error.
-func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, string, error) {
+// corresponds to the index displayed by currently watching shows.
+// It returns the updated shows slice, a boolean if the show was completed, and an error.
+func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, bool, error) {
 	if listIndex <= 0 {
-		return nil, "", fmt.Errorf("invalid index: %d", listIndex)
+		return nil, false, fmt.Errorf("invalid index: %d", listIndex)
 	}
 
-	// Build mapping from currently-watching list back to original shows slice
-	var watchingIndices []int
-	for i, s := range shows {
-		if s.CurrentSeries == nil && s.CurrentEpisode == nil {
-			continue
-		}
-		watchingIndices = append(watchingIndices, i)
+	if listIndex > len(shows) {
+		return nil, false, fmt.Errorf("index out of range")
 	}
 
-	if listIndex > len(watchingIndices) {
-		return nil, "", fmt.Errorf("index out of range")
-	}
-
-	origIdx := watchingIndices[listIndex-1]
-	s := &shows[origIdx]
+	s := &shows[listIndex-1]
 
 	if s.CurrentSeries == nil || s.CurrentEpisode == nil {
-		return nil, "", fmt.Errorf("selected show is not currently being watched")
+		return nil, false, fmt.Errorf("selected show is not currently being watched")
 	}
 
 	curSeries := *s.CurrentSeries
@@ -72,7 +61,7 @@ func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, string, 
 		// Defensive: if data is malformed, treat as finished
 		s.CurrentSeries = nil
 		s.CurrentEpisode = nil
-		return shows, fmt.Sprintf("Congratulations! You finished %s.", s.Name), nil
+		return shows, true, nil
 	}
 
 	episodesInSeries := s.Episodes[curSeries-1]
@@ -88,12 +77,12 @@ func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, string, 
 			// finished the show
 			s.CurrentSeries = nil
 			s.CurrentEpisode = nil
-			return shows, fmt.Sprintf("Congratulations! You finished %s.", s.Name), nil
+			return shows, true, nil
 		}
 	}
 
 	// set updated values
 	s.CurrentSeries = &curSeries
 	s.CurrentEpisode = &curEpisode
-	return shows, "Updated show progress.", nil
+	return shows, false, nil
 }
