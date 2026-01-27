@@ -48,9 +48,9 @@ The port can be customized with the `-port` flag (default: 8080).
 #### Available Endpoints
 
 - `GET /health` — Health check
-- `GET /api/shows` — Get currently watching shows (JSON)
-- `POST /api/shows/mark?index=1` — Mark show as watched
-- `GET /api/films` — Get all films (JSON)
+- `GET /shows` — Get currently watching shows (JSON)
+- `POST /shows/watch?index=1` — Mark show as watched
+- `GET /films` — Get all films (JSON)
 
 #### Example API Calls
 
@@ -59,13 +59,13 @@ The port can be customized with the `-port` flag (default: 8080).
 curl http://localhost:8080/health
 
 # Get currently watching shows
-curl http://localhost:8080/api/shows
+curl http://localhost:8080/shows
 
 # Mark show #1 as watched
-curl -X POST http://localhost:8080/api/shows/mark?index=1
+curl -X POST http://localhost:8080/shows/mark?index=1
 
 # Get all films
-curl http://localhost:8080/api/films
+curl http://localhost:8080/films
 ```
 
 ## Architecture

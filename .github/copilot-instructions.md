@@ -49,9 +49,9 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
    Starts HTTP server. Endpoints:
      - `GET /health` — Health check
-     - `GET /api/shows` — Get currently watching shows (JSON)
-     - `POST /api/shows/mark?index=1` — Mark show as watched
-     - `GET /api/films` — Get all films (JSON)
+     - `GET /shows` — Get currently watching shows (JSON)
+     - `POST /shows/watch?index=1` — Mark show as watched
+     - `GET /films` — Get all films (JSON)
 
 5) Install (optional):
 

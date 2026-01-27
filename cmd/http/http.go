@@ -56,13 +56,13 @@ func NewServerWithHandler(port int, handler Handler) *Server {
 
 // Start begins listening for HTTP requests
 func (s *Server) Start() error {
-	http.HandleFunc("/api/shows", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/shows", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetShows(w, r)
 	})
-	http.HandleFunc("/api/shows/mark", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/shows/watch", func(w http.ResponseWriter, r *http.Request) {
 		s.handleMarkShowWatched(w, r)
 	})
-	http.HandleFunc("/api/films", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/films", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetFilms(w, r)
 	})
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

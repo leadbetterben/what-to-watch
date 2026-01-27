@@ -104,7 +104,7 @@ func TestHandleGetShows(t *testing.T) {
 			}
 
 			server := NewServerWithHandler(8080, mock)
-			req := httptest.NewRequest(tt.method, "/api/shows", nil)
+			req := httptest.NewRequest(tt.method, "/shows", nil)
 			w := httptest.NewRecorder()
 
 			server.handleGetShows(w, req)
@@ -206,7 +206,7 @@ func TestHandleMarkShowWatched(t *testing.T) {
 			}
 
 			server := NewServerWithHandler(8080, mock)
-			url := "/api/shows/mark"
+			url := "/shows/watch"
 			if tt.indexParam != "" {
 				url += "?index=" + tt.indexParam
 			}
@@ -305,7 +305,7 @@ func TestHandleGetFilms(t *testing.T) {
 			}
 
 			server := NewServerWithHandler(8080, mock)
-			req := httptest.NewRequest(tt.method, "/api/films", nil)
+			req := httptest.NewRequest(tt.method, "/films", nil)
 			w := httptest.NewRecorder()
 
 			server.handleGetFilms(w, req)
