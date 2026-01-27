@@ -16,11 +16,11 @@ Key files and intent
 - `cmd/cli/cli.go` — interactive CLI interface; calls handlers.
 - `cmd/http/http.go` — HTTP REST API server; implements `Handler` interface pattern for dependency injection in tests.
 - `cmd/http/http_test.go` — Table-driven tests for all HTTP handler functions. Uses `mockHandler` to stub business logic calls.
-- `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `WriteShows`, and `ReadFilms`).
+- `db/db.go` — read/write helpers and `getFullPath` logic for `db/currentShows.json` and `db/films.json` (includes `ReadCurrentShows`, `WriteCurrentShows`, and `ReadFilms`).
 - `data/data.go` — `Show` and `Film` struct types used across packages.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, and `GetUnwatchedShowsByGenre`.
 - `shows/shows_test.go` — unit tests for `shows` package (fast, in-memory).
-- `db/shows.json` and `db/films.json` — canonical on-disk data used when running `go run .`.
+- `db/currentShows.json` and `db/films.json` — canonical on-disk data used when running `go run .`.
 
 Common Commands (PowerShell)
 
@@ -50,7 +50,7 @@ Testing & Validation
 
 - Unit tests live under `shows/` for business logic and `cmd/http/` for HTTP handlers. They are fast and authoritative.
 - HTTP handler tests use table-driven approach with `mockHandler` implementing the `Handler` interface for dependency injection.
-- Tests should not rely on `db/shows.json` being modified — tests use in-memory data.
+- Tests should not rely on `db/currentShows.json` being modified — tests use in-memory data.
 - After implementing changes, run:
 
 ```sh
@@ -83,9 +83,9 @@ Documentation
 
 Data and File I/O Notes
 
-- `db.ReadShows()` searches for `shows.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `shows.json` next to the binary, whereas `go run .` finds the source `db/shows.json`.
-- `db.ReadFilms()` searches for `films.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `films.json` next to the binary, whereas `go run .` finds the source `db/filmms.json`.
-- `db.WriteShows()` writes atomically (temp file then rename). Be careful not to accidentally commit runtime-modified JSON files.
+- `db.ReadCurrentShows()` searches for `currentShows.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `currentShows.json` next to the binary, whereas `go run .` finds the source `db/currentShows.json`.
+- `db.ReadFilms()` searches for `films.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `films.json` next to the binary, whereas `go run .` finds the source `db/films.json`.
+- `db.WriteCurrentShows()` writes atomically (temp file then rename). Be careful not to accidentally commit runtime-modified JSON files.
 
 Agent Behaviour & Tooling Conventions
 
@@ -112,7 +112,7 @@ Safety and Scope
 If You Need More
 
 - If any CI or test failures are unclear, run the failing commands locally and include the exact error output in your report.
-- When in doubt about changing `db/shows.json` on-disk, ask for guidance or open a draft PR.
+- When in doubt about changing `db/currentShows.json` on-disk, ask for guidance or open a draft PR.
 
 Contact / Handoff
 

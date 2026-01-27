@@ -20,7 +20,7 @@ Top-level facts the agent should trust (no search needed unless instructions are
 
 - Go version: 1.25.4 (declared in `go.mod` and in the repo CI at `.github/workflows/go.yml`).
 - Build toolchain: use the Go toolchain (`go` CLI). Actions/CI uses `actions/setup-go@v4` with `go-version: '1.25.4'`.
-- Test behavior: unit tests live under `shows/` and run fast. Tests do not rely on editing `db/shows.json` (they use in-memory structs).
+- Test behavior: unit tests live under `shows/` and run fast. Tests do not rely on editing `db/currentShows.json` (they use in-memory structs).
 
 Build, run, and test (validated commands)
 
@@ -43,7 +43,7 @@ These sequences were run and validated in a Windows PowerShell environment in th
    `go run .`
    `go run . -mode=cli`
 
-   Behavior: runs the CLI and reads/writes `shows.json` via the `db` package. When run with `go run .` during development, `db.getFullPath` resolves the file relative to the source directory.
+   Behavior: runs the CLI and reads/writes `currentShows.json` via the `db` package. When run with `go run .` during development, `db.getFullPath` resolves the file relative to the source directory.
 
 4) Run (HTTP mode):
 
@@ -73,10 +73,10 @@ These sequences were run and validated in a Windows PowerShell environment in th
 Important environment/workflow notes
 
 - CI: `.github/workflows/go.yml` is the single GitHub Actions workflow. It runs on `push` and `pull_request` to `main` and uses Go 1.25.4. To avoid surprises, match that Go version locally or use the same action in a test run.
-- File I/O: `db.ReadShows()` and `db.ReadFilms()` look for their respective JSON files near the executable first, then fall back to the source `db` directory. This means:
-  - Built binaries may expect `shows.json` and `films.json` to live next to the binary.
-  - `go run .` and tests will find `db/shows.json` and `db/films.json` in the source tree.
-  - When writing (`db.WriteShows`), the code writes atomically (temp file then rename) to the discovered `shows.json` path.
+- File I/O: `db.ReadCurrentShows()` and `db.ReadFilms()` look for their respective JSON files near the executable first, then fall back to the source `db` directory. This means:
+  - Built binaries may expect `currentShows.json` and `films.json` to live next to the binary.
+  - `go run .` and tests will find `db/currentShows.json` and `db/films.json` in the source tree.
+  - When writing (`db.WriteCurrentShows`), the code writes atomically (temp file then rename) to the discovered `currentShows.json` path.
 - Tests do not modify on-disk JSON; unit tests use in-memory `data.Show` slices. PRs that change the JSON files should be careful to not accidentally commit runtime-modified files.
 
 Project layout (high-value paths and files to edit)
@@ -85,12 +85,12 @@ Project layout (high-value paths and files to edit)
 - `handlers/handlers.go` — business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
 - `cmd/cli/cli.go` — CLI interface
 - `cmd/http/http.go` — HTTP REST API
-- `db/db.go` — functions to read/write `shows.json` and `films.json`, plus `getFullPath` logic.
+- `db/db.go` — functions to read/write `currentShows.json` and `films.json`, plus `getFullPath` logic.
 - `data/data.go` — `Show` and `Film` struct definitions used across the project.
 - `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, `GetUnwatchedShowsByGenre`.
 - `shows/shows_test.go` — unit tests for `shows` package (good examples of expected behavior).
 - `cmd/http/http_test.go` — HTTP handler tests (table-driven, uses mocked `Handler` interface).
-- `db/shows.json` — canonical on-disk data used during `go run .` (do not assume tests use it).
+- `db/currentShows.json` — canonical on-disk data used during `go run .` (do not assume tests use it).
 - `plans/` — contains AI-generated implementation plans; not used by code.
 - `.github/workflows/go.yml` — CI workflow that must pass for PRs.
 
@@ -121,7 +121,7 @@ Short content snapshot (high-priority snippets)
 - `go.mod`: `go 1.25.4`
 - `main.go`: dispatcher with CLI/HTTP routing. CLI: menu for shows/films. HTTP: endpoints for shows/films/mark/health.
 - `handlers/handlers.go`: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
-- `db/db.go`: `ReadShows()`, `WriteShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).
+- `db/db.go`: `ReadCurrentShows()`, `WriteCurrentShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).
 - `data/data.go`: `Show` struct (with episode tracking) and `Film` struct (simple name/genre/provider).
 - `shows/shows.go`: contains `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, and `GetUnwatchedShowsByGenre` business logic (tests in `shows/shows_test.go`).
 - `cmd/http/http.go`: defines `Handler` interface for dependency injection; `defaultHandler` implements it by calling `handlers` package functions.
