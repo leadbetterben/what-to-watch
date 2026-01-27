@@ -180,6 +180,122 @@ func TestMarkEpisodeWatched(t *testing.T) {
 	}
 }
 
+func TestGetUniqueGenres(t *testing.T) {
+	tests := []struct {
+		name     string
+		shows    []data.Show
+		expected []string
+	}{
+		{
+			name:     "no shows",
+			shows:    []data.Show{},
+			expected: []string(nil),
+		},
+		{
+			name: "single genre",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama"},
+				{Name: "Show B", Genre: "Drama"},
+			},
+			expected: []string{"Drama"},
+		},
+		{
+			name: "multiple genres",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama"},
+				{Name: "Show B", Genre: "Comedy"},
+				{Name: "Show C", Genre: "Sci-Fi"},
+				{Name: "Show D", Genre: "Drama"},
+			},
+			expected: []string{"Drama", "Comedy", "Sci-Fi"},
+		},
+		{
+			name: "empty genre is ignored",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama"},
+				{Name: "Show B", Genre: ""},
+			},
+			expected: []string{"Drama"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetUniqueGenres(tt.shows)
+			// Note: order of genres is not guaranteed, so we use a map-based comparison
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected %d genres, got %d", len(tt.expected), len(result))
+			}
+			resultMap := make(map[string]bool)
+			for _, g := range result {
+				resultMap[g] = true
+			}
+			for _, g := range tt.expected {
+				if !resultMap[g] {
+					t.Errorf("expected genre %s not found in result", g)
+				}
+			}
+		})
+	}
+}
+
+func TestGetUnwatchedShowsByGenre(t *testing.T) {
+	tests := []struct {
+		name     string
+		shows    []data.Show
+		genre    string
+		expected []data.Show
+	}{
+		{
+			name:     "no shows",
+			shows:    []data.Show{},
+			genre:    "Drama",
+			expected: []data.Show(nil),
+		},
+		{
+			name: "no unwatched shows for genre",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
+				{Name: "Show B", Genre: "Comedy"},
+			},
+			genre:    "Drama",
+			expected: []data.Show(nil),
+		},
+		{
+			name: "get unwatched shows for genre",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama"},
+				{Name: "Show B", Genre: "Comedy"},
+				{Name: "Show C", Genre: "Drama", CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
+				{Name: "Show D", Genre: "Drama"},
+			},
+			genre: "Drama",
+			expected: []data.Show{
+				{Name: "Show A", Genre: "Drama"},
+				{Name: "Show D", Genre: "Drama"},
+			},
+		},
+		{
+			name: "genre does not exist",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama"},
+				{Name: "Show B", Genre: "Comedy"},
+			},
+			genre:    "Horror",
+			expected: []data.Show(nil),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetUnwatchedShowsByGenre(tt.shows, tt.genre)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("expected %+v, got %+v", tt.expected, result)
+			}
+		})
+	}
+}
+
 // intPtr is a small test helper to construct *int values inline.
 func intPtr(i int) *int {
 	return &i

@@ -10,6 +10,21 @@ import (
 	"what-to-watch/data"
 )
 
+// ReadShows reads the shows from the shows.json file and returns a slice of Show structs.
+func ReadShows() ([]data.Show, error) {
+	raw, err := readFile("shows.json")
+	if err != nil {
+		return nil, fmt.Errorf("ReadShows: error reading file \n err=%w", err)
+	}
+
+	var shows []data.Show
+	if err := json.Unmarshal(raw, &shows); err != nil {
+		return nil, err
+	}
+
+	return shows, nil
+}
+
 // ReadCurrentShows reads the shows from the currentShows.json file and returns a slice of Show structs.
 func ReadCurrentShows() ([]data.Show, error) {
 	raw, err := readFile("currentShows.json")

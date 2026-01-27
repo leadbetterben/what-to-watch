@@ -14,9 +14,11 @@ import (
 
 // mockHandler implements the Handler interface for testing
 type mockHandler struct {
-	getShowsFunc        func() ([]data.Show, error)
-	markShowWatchedFunc func(idx int) (bool, error)
-	getFilmsFunc        func() ([]data.Film, error)
+	getShowsFunc            func() ([]data.Show, error)
+	markShowWatchedFunc     func(idx int) (bool, error)
+	getFilmsFunc            func() ([]data.Film, error)
+	getGenresFunc           func() ([]string, error)
+	getUnwatchedByGenreFunc func(genre string) ([]data.Show, error)
 }
 
 func (m *mockHandler) GetCurrentlyWatchingShows() ([]data.Show, error) {
@@ -31,10 +33,19 @@ func (m *mockHandler) GetAllFilms() ([]data.Film, error) {
 	return m.getFilmsFunc()
 }
 
+func (m *mockHandler) GetAvailableGenres() ([]string, error) {
+	return m.getGenresFunc()
+}
+
+func (m *mockHandler) GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
+	return m.getUnwatchedByGenreFunc(genre)
+}
+
 func TestHandleGetShows(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
+		genreParam     string
 		mockShows      []data.Show
 		mockErr        error
 		expectedStatus int
@@ -93,6 +104,37 @@ func TestHandleGetShows(t *testing.T) {
 			expectedStatus: http.StatusMethodNotAllowed,
 			expectShowLen:  0,
 		},
+		{
+			name:       "successful get shows by genre",
+			method:     http.MethodGet,
+			genreParam: "Drama",
+			mockShows: []data.Show{
+				{
+					Name:     "Breaking Bad",
+					Genre:    "Drama",
+					Provider: "Netflix",
+					Episodes: []int{1, 2, 3},
+				},
+				{
+					Name:     "The Crown",
+					Genre:    "Drama",
+					Provider: "Netflix",
+					Episodes: []int{1, 2},
+				},
+			},
+			mockErr:        nil,
+			expectedStatus: http.StatusOK,
+			expectShowLen:  2,
+		},
+		{
+			name:           "empty shows for genre",
+			method:         http.MethodGet,
+			genreParam:     "Horror",
+			mockShows:      []data.Show{},
+			mockErr:        nil,
+			expectedStatus: http.StatusOK,
+			expectShowLen:  0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -101,10 +143,17 @@ func TestHandleGetShows(t *testing.T) {
 				getShowsFunc: func() ([]data.Show, error) {
 					return tt.mockShows, tt.mockErr
 				},
+				getUnwatchedByGenreFunc: func(genre string) ([]data.Show, error) {
+					return tt.mockShows, tt.mockErr
+				},
 			}
 
 			server := NewServerWithHandler(8080, mock)
-			req := httptest.NewRequest(tt.method, "/shows", nil)
+			url := "/shows"
+			if tt.genreParam != "" {
+				url = url + fmt.Sprintf("?genre=%s", tt.genreParam)
+			}
+			req := httptest.NewRequest(tt.method, url, nil)
 			w := httptest.NewRecorder()
 
 			server.handleGetShows(w, req)
@@ -323,6 +372,81 @@ func TestHandleGetFilms(t *testing.T) {
 			}
 			if len(films) != tt.expectFilmLen {
 				t.Errorf("expected %d films, got %d", tt.expectFilmLen, len(films))
+			}
+		})
+	}
+}
+
+func TestHandleGetGenres(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		mockGenres     []string
+		mockErr        error
+		expectedStatus int
+		expectGenreLen int
+	}{
+		{
+			name:           "successful get genres",
+			method:         http.MethodGet,
+			mockGenres:     []string{"Drama", "Comedy", "Sci-Fi"},
+			mockErr:        nil,
+			expectedStatus: http.StatusOK,
+			expectGenreLen: 3,
+		},
+		{
+			name:           "empty genres list",
+			method:         http.MethodGet,
+			mockGenres:     []string{},
+			mockErr:        nil,
+			expectedStatus: http.StatusOK,
+			expectGenreLen: 0,
+		},
+		{
+			name:           "handler error",
+			method:         http.MethodGet,
+			mockGenres:     nil,
+			mockErr:        fmt.Errorf("database error"),
+			expectedStatus: http.StatusInternalServerError,
+			expectGenreLen: 0,
+		},
+		{
+			name:           "invalid method POST",
+			method:         http.MethodPost,
+			mockGenres:     []string{},
+			mockErr:        nil,
+			expectedStatus: http.StatusMethodNotAllowed,
+			expectGenreLen: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockHandler{
+				getGenresFunc: func() ([]string, error) {
+					return tt.mockGenres, tt.mockErr
+				},
+			}
+
+			server := NewServerWithHandler(8080, mock)
+			req := httptest.NewRequest(tt.method, "/genres", nil)
+			w := httptest.NewRecorder()
+
+			server.handleGetGenres(w, req)
+
+			if w.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, w.Code)
+			}
+
+			body, _ := io.ReadAll(w.Body)
+			var genres []string
+			if err := json.Unmarshal(body, &genres); err != nil {
+				if tt.expectGenreLen > 0 {
+					t.Fatalf("failed to unmarshal response: %v", err)
+				}
+			}
+			if len(genres) != tt.expectGenreLen {
+				t.Errorf("expected %d genres, got %d", tt.expectGenreLen, len(genres))
 			}
 		})
 	}

@@ -12,13 +12,13 @@ Environment & Tooling
 Key files and intent
 
 - `main.go` — dispatcher: parses flags (`-mode=cli|http`, `-port=PORT`), routes to CLI or HTTP mode.
-- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`
+- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
 - `cmd/cli/cli.go` — interactive CLI interface; calls handlers.
 - `cmd/http/http.go` — HTTP REST API server; implements `Handler` interface pattern for dependency injection in tests.
 - `cmd/http/http_test.go` — Table-driven tests for all HTTP handler functions. Uses `mockHandler` to stub business logic calls.
 - `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `WriteShows`, and `ReadFilms`).
 - `data/data.go` — `Show` and `Film` struct types used across packages.
-- `shows/shows.go` — business logic: `GetCurrentlyWatching` and `MarkEpisodeWatched`.
+- `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, and `GetUnwatchedShowsByGenre`.
 - `shows/shows_test.go` — unit tests for `shows` package (fast, in-memory).
 - `db/shows.json` and `db/films.json` — canonical on-disk data used when running `go run .`.
 

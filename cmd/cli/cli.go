@@ -19,7 +19,8 @@ func Run() {
 	fmt.Println("What would you like to view?")
 	fmt.Println("1. Currently watching shows")
 	fmt.Println("2. Films")
-	fmt.Print("Enter your choice (1 or 2): ")
+	fmt.Println("3. Shows by genre")
+	fmt.Print("Enter your choice (1, 2, or 3): ")
 
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
@@ -29,8 +30,10 @@ func Run() {
 		viewShows(reader)
 	case "2":
 		viewFilms()
+	case "3":
+		viewShowsByGenre(reader)
 	default:
-		fmt.Println("Invalid input. Please enter 1 or 2.")
+		fmt.Println("Invalid input. Please enter 1, 2, or 3.")
 	}
 }
 
@@ -79,6 +82,53 @@ func viewFilms() {
 	}
 
 	fmt.Println(formatFilmsTable(films))
+}
+
+func viewShowsByGenre(reader *bufio.Reader) {
+	// Get available genres
+	genres, err := handlers.GetAvailableGenres()
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+
+	if len(genres) == 0 {
+		fmt.Println("No genres available.")
+		return
+	}
+
+	// Display genres
+	fmt.Println("Available genres:")
+	for i, genre := range genres {
+		fmt.Printf("%d. %s\n", i+1, genre)
+	}
+
+	// Get user selection
+	fmt.Print("Enter the genre number (0 to cancel): ")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" || input == "0" {
+		fmt.Println("No selection made.")
+		return
+	}
+
+	idx, err := strconv.Atoi(input)
+	if err != nil || idx < 1 || idx > len(genres) {
+		fmt.Printf("Invalid input: %s\n", input)
+		return
+	}
+
+	selectedGenre := genres[idx-1]
+
+	// Get shows for selected genre
+	shows, err := handlers.GetUnwatchedShowsByGenre(selectedGenre)
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+
+	fmt.Printf("Unwatched shows in genre '%s':\n", selectedGenre)
+	fmt.Println(formatShowsByGenreTable(shows))
 }
 
 // formatShowsTable formats shows into a table string
@@ -136,6 +186,51 @@ func formatShowsTable(s []data.Show) string {
 	// rows
 	for i, r := range s {
 		buf.WriteString(fmt.Sprintf(format, strconv.Itoa(i+1), r.Name, r.Genre, r.Provider, r.Series, r.Episode))
+	}
+
+	return buf.String()
+}
+
+// formatShowsByGenreTable formats unwatched shows into a table string
+func formatShowsByGenreTable(s []data.Show) string {
+	if len(s) == 0 {
+		return "No unwatched shows in this genre.\n"
+	}
+
+	// compute column widths
+	wIndex := len("Index")
+	wName := len("Name")
+	wProvider := len("Provider")
+
+	for _, r := range s {
+		if l := len(r.Name); l > wName {
+			wName = l
+		}
+		if l := len(r.Provider); l > wProvider {
+			wProvider = l
+		}
+	}
+
+	// build format string (left-aligned columns, two spaces between)
+	format := fmt.Sprintf("%%-%ds  %%-%ds  %%-%ds\n",
+		wIndex, wName, wProvider)
+
+	var buf strings.Builder
+
+	// header
+	buf.WriteString(fmt.Sprintf(format, "Index", "Name", "Provider"))
+
+	// separator line
+	parts := []string{
+		strings.Repeat("-", wIndex),
+		strings.Repeat("-", wName),
+		strings.Repeat("-", wProvider),
+	}
+	buf.WriteString(fmt.Sprintf(format, parts[0], parts[1], parts[2]))
+
+	// rows
+	for i, r := range s {
+		buf.WriteString(fmt.Sprintf(format, strconv.Itoa(i+1), r.Name, r.Provider))
 	}
 
 	return buf.String()

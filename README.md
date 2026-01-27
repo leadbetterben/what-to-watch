@@ -30,10 +30,11 @@ This launches an interactive menu:
 What would you like to view?
 1. Currently watching shows
 2. Films
-Enter your choice (1 or 2):
+3. Shows by genre
+Enter your choice (1, 2, or 3):
 ```
 
-Select option 1 to view and update currently watching shows, or option 2 to view your films collection.
+Select option 1 to view and update currently watching shows, option 2 to view your films collection, or option 3 to see unwatched shows filtered by genre.
 
 ### HTTP Mode
 
@@ -48,9 +49,10 @@ The port can be customized with the `-port` flag (default: 8080).
 #### Available Endpoints
 
 - `GET /health` — Health check
-- `GET /shows` — Get currently watching shows (JSON)
+- `GET /shows` — Get currently watching shows (JSON) - optional genre param to filter
 - `POST /shows/watch?index=1` — Mark show as watched
 - `GET /films` — Get all films (JSON)
+- `GET /genres` — Get all available genres (JSON)
 
 #### Example API Calls
 
@@ -61,11 +63,18 @@ curl http://localhost:8080/health
 # Get currently watching shows
 curl http://localhost:8080/shows
 
+# Get unwatched shows in Drama genre
+curl http://localhost:8080/shows?genre=drama
+
 # Mark show #1 as watched
-curl -X POST http://localhost:8080/shows/mark?index=1
+curl -X POST http://localhost:8080/shows/watch?index=1
 
 # Get all films
 curl http://localhost:8080/films
+
+# Get available genres
+curl http://localhost:8080/genres
+
 ```
 
 ## Architecture
@@ -76,6 +85,8 @@ The program uses consistent handler functions that can be called by either inter
   - `GetCurrentlyWatchingShows()` — Retrieves currently watching shows
   - `MarkShowWatched(idx)` — Marks a show episode as watched
   - `GetAllFilms()` — Retrieves all films
+  - `GetAvailableGenres()` — Retrieves all unique genres from shows
+  - `GetUnwatchedShowsByGenre(genre)` — Retrieves unwatched shows for a specific genre
 - **`cmd/cli/cli.go`** — Interactive CLI interface that calls the handlers
 - **`cmd/http/http.go`** — HTTP REST API that calls the same handlers
 
