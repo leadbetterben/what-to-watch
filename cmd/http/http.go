@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -15,6 +14,8 @@ type Handler interface {
 	GetCurrentlyWatchingShows() ([]data.Show, error)
 	MarkShowWatched(idx int) (bool, error)
 	GetAllFilms() ([]data.Film, error)
+	GetAvailableGenres() ([]string, error)
+	GetUnwatchedShowsByGenre(genre string) ([]data.Show, error)
 }
 
 // defaultHandler uses the handlers package functions
@@ -30,6 +31,14 @@ func (h *defaultHandler) MarkShowWatched(idx int) (bool, error) {
 
 func (h *defaultHandler) GetAllFilms() ([]data.Film, error) {
 	return handlers.GetAllFilms()
+}
+
+func (h *defaultHandler) GetAvailableGenres() ([]string, error) {
+	return handlers.GetAvailableGenres()
+}
+
+func (h *defaultHandler) GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
+	return handlers.GetUnwatchedShowsByGenre(genre)
 }
 
 // Server holds the HTTP server instance
@@ -65,6 +74,9 @@ func (s *Server) Start() error {
 	http.HandleFunc("/films", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetFilms(w, r)
 	})
+	http.HandleFunc("/genres", func(w http.ResponseWriter, r *http.Request) {
+		s.handleGetGenres(w, r)
+	})
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		s.handleHealth(w, r)
 	})
@@ -76,7 +88,19 @@ func (s *Server) Start() error {
 
 func (s *Server) handleGetShows(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodError(w, http.MethodGet)
+		writeMethodError(w, http.MethodGet)
+		return
+	}
+
+	genre := r.URL.Query().Get("genre")
+	if genre != "" {
+		shows, err := s.handler.GetUnwatchedShowsByGenre(genre)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, shows)
 		return
 	}
 
@@ -91,7 +115,7 @@ func (s *Server) handleGetShows(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		methodError(w, http.MethodPost)
+		writeMethodError(w, http.MethodPost)
 		return
 	}
 
@@ -118,7 +142,7 @@ func (s *Server) handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleGetFilms(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodError(w, http.MethodGet)
+		writeMethodError(w, http.MethodGet)
 		return
 	}
 
@@ -131,26 +155,26 @@ func (s *Server) handleGetFilms(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, films)
 }
 
+func (s *Server) handleGetGenres(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodError(w, http.MethodGet)
+		return
+	}
+
+	genres, err := s.handler.GetAvailableGenres()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, genres)
+}
+
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		methodError(w, http.MethodGet)
+		writeMethodError(w, http.MethodGet)
 		return
 	}
 
 	writeJSON(w, http.StatusOK, nil)
-}
-
-func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
-}
-
-func writeError(w http.ResponseWriter, statusCode int, err error) {
-	w.WriteHeader(statusCode)
-	fmt.Printf("%s\n", err)
-}
-
-func methodError(w http.ResponseWriter, allowedMethod string) {
-	writeError(w, http.StatusMethodNotAllowed, fmt.Errorf("only %s is allowed", allowedMethod))
 }

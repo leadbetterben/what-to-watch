@@ -86,3 +86,31 @@ func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, bool, er
 	s.CurrentEpisode = &curEpisode
 	return shows, false, nil
 }
+
+// GetUniqueGenres returns a sorted list of unique genres from all shows
+func GetUniqueGenres(shows []data.Show) []string {
+	genreMap := make(map[string]bool)
+	for _, s := range shows {
+		if s.Genre != "" {
+			genreMap[s.Genre] = true
+		}
+	}
+
+	var genres []string
+	for genre := range genreMap {
+		genres = append(genres, genre)
+	}
+	return genres
+}
+
+// GetUnwatchedShowsByGenre returns all shows from a given genre that haven't been watched
+// (i.e., shows without CurrentSeries and CurrentEpisode set)
+func GetUnwatchedShowsByGenre(shows []data.Show, genre string) []data.Show {
+	var unwatched []data.Show
+	for _, s := range shows {
+		if s.Genre == genre && s.CurrentSeries == nil && s.CurrentEpisode == nil {
+			unwatched = append(unwatched, s)
+		}
+	}
+	return unwatched
+}

@@ -9,6 +9,8 @@ Architecture and handler details:
   - `GetCurrentlyWatchingShows()` — Retrieves currently watching shows
   - `MarkShowWatched(idx)` — Marks a show episode as watched
   - `GetAllFilms()` — Retrieves all films
+  - `GetAvailableGenres()` — Retrieves all unique genres from shows
+  - `GetUnwatchedShowsByGenre(genre)` — Retrieves unwatched shows for a specific genre
 - `cmd/cli/cli.go` — Interactive CLI interface that calls the handlers
 - `cmd/http/http.go` — HTTP REST API that calls the same handlers; refactored with `Handler` interface for dependency injection
 - `cmd/http/http_test.go` — Table-driven tests for all HTTP handlers with mocked dependencies
@@ -49,9 +51,10 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
    Starts HTTP server. Endpoints:
      - `GET /health` — Health check
-     - `GET /shows` — Get currently watching shows (JSON)
+     - `GET /shows` — Get currently watching shows (JSON) - optional genre param to filter
      - `POST /shows/watch?index=1` — Mark show as watched
      - `GET /films` — Get all films (JSON)
+     - `GET /genres` — Get all available genres (JSON)
 
 5) Install (optional):
 
@@ -79,12 +82,12 @@ Important environment/workflow notes
 Project layout (high-value paths and files to edit)
 
 - `main.go` — dispatcher: parses flags, routes to CLI or HTTP mode
-- `handlers/handlers.go` — business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`
+- `handlers/handlers.go` — business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
 - `cmd/cli/cli.go` — CLI interface
 - `cmd/http/http.go` — HTTP REST API
 - `db/db.go` — functions to read/write `shows.json` and `films.json`, plus `getFullPath` logic.
 - `data/data.go` — `Show` and `Film` struct definitions used across the project.
-- `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`.
+- `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, `GetUnwatchedShowsByGenre`.
 - `shows/shows_test.go` — unit tests for `shows` package (good examples of expected behavior).
 - `cmd/http/http_test.go` — HTTP handler tests (table-driven, uses mocked `Handler` interface).
 - `db/shows.json` — canonical on-disk data used during `go run .` (do not assume tests use it).
@@ -117,12 +120,12 @@ Short content snapshot (high-priority snippets)
 
 - `go.mod`: `go 1.25.4`
 - `main.go`: dispatcher with CLI/HTTP routing. CLI: menu for shows/films. HTTP: endpoints for shows/films/mark/health.
-- `handlers/handlers.go`: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `FormatShowsTable()`, `FormatFilmsTable()`
+- `handlers/handlers.go`: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
 - `db/db.go`: `ReadShows()`, `WriteShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).
 - `data/data.go`: `Show` struct (with episode tracking) and `Film` struct (simple name/genre/provider).
-- `shows/shows.go`: contains `GetCurrentlyWatching` and `MarkEpisodeWatched` business logic (tests in `shows/shows_test.go`).
+- `shows/shows.go`: contains `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, and `GetUnwatchedShowsByGenre` business logic (tests in `shows/shows_test.go`).
 - `cmd/http/http.go`: defines `Handler` interface for dependency injection; `defaultHandler` implements it by calling `handlers` package functions.
-- `cmd/http/http_test.go`: table-driven tests for all HTTP handlers (`TestHandleGetShows`, `TestHandleMarkShowWatched`, `TestHandleGetFilms`, `TestHandleHealth`) with `mockHandler` providing test stubs.
+- `cmd/http/http_test.go`: table-driven tests for all HTTP handlers (`TestHandleGetShows`, `TestHandleMarkShowWatched`, `TestHandleGetFilms`, `TestHandleGetGenres`, `TestHandleGetShowsByGenre`, `TestHandleHealth`) with `mockHandler` providing test stubs.
 
 If anything in this file is inconsistent with the repo state, run `git status` and search the few files listed above before making changes.
 
