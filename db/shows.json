@@ -94,19 +94,6 @@
     "provider": "Netflix"
   },
   {
-    "name": "Bojack Horseman",
-    "genre": "comedy",
-    "episodes": [
-      12,
-      12,
-      12,
-      12,
-      12,
-      16
-    ],
-    "provider": "Netflix"
-  },
-  {
     "name": "Stath Lets Flats",
     "genre": "comedy",
     "episodes": [

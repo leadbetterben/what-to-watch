@@ -92,5 +92,20 @@
     "provider": "Netflix",
     "currentSeries": 8,
     "currentEpisode": 5
+  },
+  {
+    "name": "Bojack Horseman",
+    "genre": "comedy",
+    "episodes": [
+      12,
+      12,
+      12,
+      12,
+      12,
+      16
+    ],
+    "provider": "Netflix",
+    "currentSeries": 1,
+    "currentEpisode": 8
   }
 ]
