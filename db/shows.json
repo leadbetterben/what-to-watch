@@ -760,5 +760,21 @@
       4
     ],
     "provider": "BBC iPlayer"
+  },
+  {
+    "name": "How To Get To Heaven From Belfast",
+    "genre": "mystery",
+    "episodes": [
+      8
+    ],
+    "provider": "Netflix"
+  },
+  {
+    "name": "His & Hers",
+    "genre": "drama",
+    "episodes": [
+      6
+    ],
+    "provider": "Netflix"
   }
 ]
