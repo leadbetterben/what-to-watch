@@ -78,5 +78,10 @@
         "name": "28 Days Later",
         "genre": "horror",
         "provider": "BBC iPlayer"
+    },
+    {
+        "name": "I Swear",
+        "genre": "comedy",
+        "provider": "Netflix"
     }
 ]
