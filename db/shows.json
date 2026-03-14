@@ -776,5 +776,16 @@
       6
     ],
     "provider": "Netflix"
+  },
+  {
+    "name": "The Man In the High Castle",
+    "genre": "drama",
+    "episodes": [
+      10,
+      10,
+      10,
+      10
+    ],
+    "provider": "Netflix"
   }
 ]
