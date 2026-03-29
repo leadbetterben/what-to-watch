@@ -83,5 +83,15 @@
         "name": "Inglourious Bastards",
         "genre": "drama",
         "provider": "Disney+"
+    },
+    {
+        "name": "The Naked Gun",
+        "genre": "comedy",
+        "provider":"Sky Cinema"
+    },
+    {
+        "name": "Superman",
+        "genre": "superhero",
+        "provider": "Sky Cinema"
     }
 ]
