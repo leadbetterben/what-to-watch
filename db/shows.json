@@ -601,7 +601,8 @@
     "name": "Daredevil Born again",
     "genre": "marvel",
     "episodes": [
-      9
+      9,
+      6
     ],
     "provider": "Disney+"
   },
@@ -742,7 +743,7 @@
       12,
       12
     ],
-    "provider": "Netflix"
+    "provider": "Disney+"
   },
   {
     "name": "The Wrong Mans",
@@ -787,5 +788,31 @@
       10
     ],
     "provider": "Netflix"
+  },
+  {
+    "name": "The Walking Dead",
+    "genre": "thriller",
+    "episodes": [
+      6,
+      13,
+      16,
+      16,
+      16,
+      16,
+      16,
+      16,
+      16,
+      22,
+      24
+    ],
+    "provider": "Disney+"
+  },
+  {
+    "name": "Wonder Man",
+    "genre": "marvel",
+    "episodes": [
+      8
+    ],
+    "provider": "Disney+"
   }
 ]
