@@ -366,16 +366,6 @@
     "provider": "BBC iPlayer"
   },
   {
-    "name": "Here We Go",
-    "genre": "comedy",
-    "episodes": [
-      7,
-      6,
-      7
-    ],
-    "provider": "BBC iPlayer"
-  },
-  {
     "name": "Red Dwarf",
     "genre": "comedy",
     "episodes": [
