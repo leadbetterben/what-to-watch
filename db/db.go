@@ -12,6 +12,16 @@ import (
 
 var fullPathResolver = getFullPath
 
+// SetFullPathResolverForTest replaces the data file path resolver and returns
+// a restore function. It is intended for tests that need isolated fixture files.
+func SetFullPathResolverForTest(resolver func(string) string) func() {
+	originalResolver := fullPathResolver
+	fullPathResolver = resolver
+	return func() {
+		fullPathResolver = originalResolver
+	}
+}
+
 // ReadShows reads the shows from the shows.json file and returns a slice of Show structs.
 func ReadShows() ([]data.Show, error) {
 	raw, err := readFile("shows.json")

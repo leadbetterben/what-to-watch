@@ -197,11 +197,7 @@ func TestWriteCurrentShowsReplacesExistingFileAndRemovesTempFile(t *testing.T) {
 }
 
 func TestReadFileReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
-	originalResolver := fullPathResolver
-	fullPathResolver = func(string) string { return "" }
-	t.Cleanup(func() {
-		fullPathResolver = originalResolver
-	})
+	t.Cleanup(SetFullPathResolverForTest(func(string) string { return "" }))
 
 	if _, err := readFile("shows.json"); err == nil {
 		t.Fatalf("expected error when path cannot be resolved")
@@ -209,11 +205,7 @@ func TestReadFileReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
 }
 
 func TestWriteCurrentShowsReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
-	originalResolver := fullPathResolver
-	fullPathResolver = func(string) string { return "" }
-	t.Cleanup(func() {
-		fullPathResolver = originalResolver
-	})
+	t.Cleanup(SetFullPathResolverForTest(func(string) string { return "" }))
 
 	if err := WriteCurrentShows([]data.Show{}); err == nil {
 		t.Fatalf("expected error when path cannot be resolved")
@@ -224,13 +216,9 @@ func useTempDataDir(t *testing.T) string {
 	t.Helper()
 
 	dir := t.TempDir()
-	originalResolver := fullPathResolver
-	fullPathResolver = func(path string) string {
+	t.Cleanup(SetFullPathResolverForTest(func(path string) string {
 		return filepath.Join(dir, path)
-	}
-	t.Cleanup(func() {
-		fullPathResolver = originalResolver
-	})
+	}))
 
 	return dir
 }
