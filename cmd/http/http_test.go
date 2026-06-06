@@ -496,3 +496,197 @@ func TestHandleHealth(t *testing.T) {
 		})
 	}
 }
+
+func TestServerRoutes(t *testing.T) {
+	var watchedIndex int
+	mock := &mockHandler{
+		getShowsFunc: func() ([]data.Show, error) {
+			return []data.Show{{Name: "Slow Horses", Genre: "Drama", Provider: "Apple TV+"}}, nil
+		},
+		getUnwatchedByGenreFunc: func(genre string) ([]data.Show, error) {
+			return []data.Show{{Name: "Unstarted " + genre, Genre: genre, Provider: "Netflix"}}, nil
+		},
+		markShowWatchedFunc: func(idx int) (bool, error) {
+			watchedIndex = idx
+			return true, nil
+		},
+		getFilmsFunc: func() ([]data.Film, error) {
+			return []data.Film{{Name: "Arrival", Genre: "Sci-Fi", Provider: "Netflix"}}, nil
+		},
+		getGenresFunc: func() ([]string, error) {
+			return []string{"Drama", "Comedy"}, nil
+		},
+	}
+
+	server := NewServerWithHandler(8080, mock)
+	testServer := httptest.NewServer(server.routes())
+	defer testServer.Close()
+
+	t.Run("GET /shows", func(t *testing.T) {
+		resp, body := getRoute(t, testServer.URL+"/shows")
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		}
+
+		var shows []data.Show
+		unmarshalBody(t, body, &shows)
+		if len(shows) != 1 || shows[0].Name != "Slow Horses" {
+			t.Fatalf("unexpected shows response: %+v", shows)
+		}
+	})
+
+	t.Run("GET /shows with genre", func(t *testing.T) {
+		resp, body := getRoute(t, testServer.URL+"/shows?genre=Drama")
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		}
+
+		var shows []data.Show
+		unmarshalBody(t, body, &shows)
+		if len(shows) != 1 || shows[0].Name != "Unstarted Drama" {
+			t.Fatalf("unexpected genre response: %+v", shows)
+		}
+	})
+
+	t.Run("POST /shows/watch", func(t *testing.T) {
+		resp, body := postRoute(t, testServer.URL+"/shows/watch?index=3")
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		}
+		if watchedIndex != 3 {
+			t.Fatalf("expected watched index 3, got %d", watchedIndex)
+		}
+
+		var completed bool
+		unmarshalBody(t, body, &completed)
+		if !completed {
+			t.Fatalf("expected completed response to be true")
+		}
+	})
+
+	t.Run("GET /films", func(t *testing.T) {
+		resp, body := getRoute(t, testServer.URL+"/films")
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		}
+
+		var films []data.Film
+		unmarshalBody(t, body, &films)
+		if len(films) != 1 || films[0].Name != "Arrival" {
+			t.Fatalf("unexpected films response: %+v", films)
+		}
+	})
+
+	t.Run("GET /genres", func(t *testing.T) {
+		resp, body := getRoute(t, testServer.URL+"/genres")
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		}
+
+		var genres []string
+		unmarshalBody(t, body, &genres)
+		if len(genres) != 2 || genres[0] != "Drama" || genres[1] != "Comedy" {
+			t.Fatalf("unexpected genres response: %+v", genres)
+		}
+	})
+
+	t.Run("GET /health", func(t *testing.T) {
+		resp, body := getRoute(t, testServer.URL+"/health")
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", resp.StatusCode)
+		}
+		if got := bytes.TrimSpace(body); !bytes.Equal(got, []byte("null")) {
+			t.Fatalf("expected health body null, got %q", string(got))
+		}
+	})
+}
+
+func TestServerRoutesMethodAndNotFoundResponses(t *testing.T) {
+	mock := &mockHandler{}
+	server := NewServerWithHandler(8080, mock)
+	testServer := httptest.NewServer(server.routes())
+	defer testServer.Close()
+
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		wantStatus int
+	}{
+		{name: "unsupported route method", method: http.MethodPost, path: "/shows", wantStatus: http.StatusMethodNotAllowed},
+		{name: "unknown route", method: http.MethodGet, path: "/missing", wantStatus: http.StatusNotFound},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest(tt.method, testServer.URL+tt.path, nil)
+			if err != nil {
+				t.Fatalf("creating request: %v", err)
+			}
+
+			resp, err := testServer.Client().Do(req)
+			if err != nil {
+				t.Fatalf("sending request: %v", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.wantStatus {
+				t.Fatalf("expected status %d, got %d", tt.wantStatus, resp.StatusCode)
+			}
+		})
+	}
+}
+
+func getRoute(t *testing.T, url string) (*http.Response, []byte) {
+	t.Helper()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		t.Fatalf("GET %s: %v", url, err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		resp.Body.Close()
+		t.Fatalf("reading body: %v", err)
+	}
+
+	return resp, body
+}
+
+func postRoute(t *testing.T, url string) (*http.Response, []byte) {
+	t.Helper()
+
+	resp, err := http.Post(url, "application/json", nil)
+	if err != nil {
+		t.Fatalf("POST %s: %v", url, err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		resp.Body.Close()
+		t.Fatalf("reading body: %v", err)
+	}
+
+	return resp, body
+}
+
+func unmarshalBody(t *testing.T, body []byte, v interface{}) {
+	t.Helper()
+
+	if err := json.Unmarshal(body, v); err != nil {
+		t.Fatalf("unmarshaling %q: %v", string(body), err)
+	}
+}
