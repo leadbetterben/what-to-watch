@@ -10,6 +10,8 @@ import (
 	"what-to-watch/data"
 )
 
+var fullPathResolver = getFullPath
+
 // ReadShows reads the shows from the shows.json file and returns a slice of Show structs.
 func ReadShows() ([]data.Show, error) {
 	raw, err := readFile("shows.json")
@@ -64,7 +66,7 @@ func WriteCurrentShows(shows []data.Show) error {
 		return err
 	}
 
-	fullPath := getFullPath("currentShows.json")
+	fullPath := fullPathResolver("currentShows.json")
 	if fullPath == "" {
 		return fmt.Errorf("WriteCurrentShows: could not determine full path to currentShows.json")
 	}
@@ -119,7 +121,7 @@ func getFullPath(path string) (fullPath string) {
 
 // readFile reads the contents of the file at the given path.
 func readFile(path string) ([]byte, error) {
-	fullPath := getFullPath(path)
+	fullPath := fullPathResolver(path)
 	if fullPath == "" {
 		return nil, fmt.Errorf("readFile: could not determine full path to %s", path)
 	}
