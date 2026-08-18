@@ -65,25 +65,30 @@ func NewServerWithHandler(port int, handler Handler) *Server {
 
 // Start begins listening for HTTP requests
 func (s *Server) Start() error {
-	http.HandleFunc("/shows", func(w http.ResponseWriter, r *http.Request) {
+	addr := fmt.Sprintf(":%d", s.port)
+	fmt.Printf("HTTP server listening on port %d\n", s.port)
+	return http.ListenAndServe(addr, s.routes())
+}
+
+func (s *Server) routes() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/shows", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetShows(w, r)
 	})
-	http.HandleFunc("/shows/watch", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/shows/watch", func(w http.ResponseWriter, r *http.Request) {
 		s.handleMarkShowWatched(w, r)
 	})
-	http.HandleFunc("/films", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/films", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetFilms(w, r)
 	})
-	http.HandleFunc("/genres", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/genres", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetGenres(w, r)
 	})
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		s.handleHealth(w, r)
 	})
 
-	addr := fmt.Sprintf(":%d", s.port)
-	fmt.Printf("HTTP server listening on port %d\n", s.port)
-	return http.ListenAndServe(addr, nil)
+	return mux
 }
 
 func (s *Server) handleGetShows(w http.ResponseWriter, r *http.Request) {

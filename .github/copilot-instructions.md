@@ -64,7 +64,16 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
    `go test ./...`
 
-   Observed results: `ok what-to-watch/shows 3.659s` and `ok what-to-watch/cmd/http` (tests pass locally). The `data`, `db`, and `cli` packages have no tests. HTTP handler tests use table-driven approach with mocked `Handler` interface. Running `go test ./...` in CI is the expected validation step.
+   HTTP handler tests use table-driven approach with mocked `Handler` interface. The suite also includes db unit tests, handler integration tests, CLI formatting and flow tests, HTTP route integration tests, and main dispatch tests. Running `go test ./...` in CI is the expected validation step.
+
+   To check package coverage:
+
+   `go test ./... -cover`
+
+   For a detailed local coverage report:
+
+   `go test ./... -coverprofile=coverage.out`
+   `go tool cover -func=coverage.out`
 
 7) Lint / formatting:
 
@@ -103,7 +112,7 @@ Quick validation guidance for the agent making changes
 - Always run locally before opening a PR: `go build ./...` then `go test ./...`.
 - Ensure your Go tool version matches CI (1.25.4). If you cannot install that version locally, run CI-oriented checks in a container or use `actions/setup-go` locally in a disposable runner.
 - If the change touches file I/O, double-check `db.getFullPath` semantics: built binaries and `go run` resolve files differently.
-- Unit tests live in `shows/` and `cmd/http/` — read `shows/shows_test.go` for business logic tests and `cmd/http/http_test.go` for HTTP handler tests as models.
+- Unit and integration tests live in `shows/`, `db/`, `handlers/`, `cmd/cli/`, `cmd/http/`, and the main package. Read `shows/shows_test.go` for business logic tests, `cmd/http/http_test.go` for HTTP handler and route tests, and `handlers/handlers_test.go` for temp-fixture integration tests as models.
 
 Where to search if instructions appear incomplete
 
@@ -125,7 +134,7 @@ Short content snapshot (high-priority snippets)
 - `data/data.go`: `Show` struct (with episode tracking) and `Film` struct (simple name/genre/provider).
 - `shows/shows.go`: contains `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, and `GetUnwatchedShowsByGenre` business logic (tests in `shows/shows_test.go`).
 - `cmd/http/http.go`: defines `Handler` interface for dependency injection; `defaultHandler` implements it by calling `handlers` package functions.
-- `cmd/http/http_test.go`: table-driven tests for all HTTP handlers (`TestHandleGetShows`, `TestHandleMarkShowWatched`, `TestHandleGetFilms`, `TestHandleGetGenres`, `TestHandleGetShowsByGenre`, `TestHandleHealth`) with `mockHandler` providing test stubs.
+- `cmd/http/http_test.go`: table-driven tests for all HTTP handlers plus route-level integration tests with `mockHandler` providing test stubs.
 
 If anything in this file is inconsistent with the repo state, run `git status` and search the few files listed above before making changes.
 

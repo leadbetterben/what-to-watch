@@ -10,6 +10,14 @@ import (
 	"what-to-watch/handlers"
 )
 
+var (
+	getCurrentlyWatchingShows = handlers.GetCurrentlyWatchingShows
+	markShowWatched           = handlers.MarkShowWatched
+	getAllFilms               = handlers.GetAllFilms
+	getAvailableGenres        = handlers.GetAvailableGenres
+	getUnwatchedShowsByGenre  = handlers.GetUnwatchedShowsByGenre
+)
+
 // Run starts the interactive CLI mode
 func Run() {
 	reader := bufio.NewReader(os.Stdin)
@@ -37,7 +45,7 @@ func Run() {
 }
 
 func viewShows(reader *bufio.Reader) {
-	shows, err := handlers.GetCurrentlyWatchingShows()
+	shows, err := getCurrentlyWatchingShows()
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
@@ -60,7 +68,7 @@ func viewShows(reader *bufio.Reader) {
 		return
 	}
 
-	isCompleted, err := handlers.MarkShowWatched(idx)
+	isCompleted, err := markShowWatched(idx)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
@@ -74,7 +82,7 @@ func viewShows(reader *bufio.Reader) {
 }
 
 func viewFilms() {
-	films, err := handlers.GetAllFilms()
+	films, err := getAllFilms()
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
@@ -85,7 +93,7 @@ func viewFilms() {
 
 func viewShowsByGenre(reader *bufio.Reader) {
 	// Get available genres
-	genres, err := handlers.GetAvailableGenres()
+	genres, err := getAvailableGenres()
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
@@ -120,7 +128,7 @@ func viewShowsByGenre(reader *bufio.Reader) {
 	selectedGenre := genres[idx-1]
 
 	// Get shows for selected genre
-	shows, err := handlers.GetUnwatchedShowsByGenre(selectedGenre)
+	shows, err := getUnwatchedShowsByGenre(selectedGenre)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return

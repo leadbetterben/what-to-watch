@@ -28,6 +28,7 @@ Common Commands (PowerShell)
 go version
 go build ./...
 go test ./...
+go test ./... -cover
 go run .              # CLI mode (default)
 go run . -mode=http   # HTTP mode on default port 8080
 ```
@@ -56,6 +57,7 @@ Testing & Validation
 ```sh
 go vet ./...
 go test ./...
+go test ./... -cover
 ```
 
 Committing & PRs

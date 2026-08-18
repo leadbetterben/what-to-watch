@@ -3,10 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	"what-to-watch/cmd/cli"
-	"what-to-watch/cmd/http"
+	apphttp "what-to-watch/cmd/http"
+)
+
+var (
+	runCLI          = cli.Run
+	startHTTPServer = func(port int) error {
+		server := apphttp.NewServer(port)
+		return server.Start()
+	}
 )
 
 func main() {
@@ -15,17 +24,24 @@ func main() {
 	port := flag.Int("port", 8080, "HTTP server port (only used in http mode)")
 	flag.Parse()
 
-	switch *mode {
+	if exitCode := run(*mode, *port, os.Stderr); exitCode != 0 {
+		os.Exit(exitCode)
+	}
+}
+
+func run(mode string, port int, stderr io.Writer) int {
+	switch mode {
 	case "cli":
-		cli.Run()
+		runCLI()
+		return 0
 	case "http":
-		server := http.NewServer(*port)
-		if err := server.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "HTTP server error: %v\n", err)
-			os.Exit(1)
+		if err := startHTTPServer(port); err != nil {
+			fmt.Fprintf(stderr, "HTTP server error: %v\n", err)
+			return 1
 		}
+		return 0
 	default:
-		fmt.Fprintf(os.Stderr, "Invalid mode: %s. Use 'cli' or 'http'.\n", *mode)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Invalid mode: %s. Use 'cli' or 'http'.\n", mode)
+		return 1
 	}
 }
