@@ -14,7 +14,7 @@ import (
 
 func TestGetCurrentlyWatchingShows(t *testing.T) {
 	dir := useTempDataDir(t)
-	writeFixture(t, dir, "currentShows.json", `[
+	writeFixture(t, dir, "shows.json", `[
   {
     "name": "Slow Horses",
     "genre": "Drama",
@@ -55,7 +55,7 @@ func TestGetCurrentlyWatchingShows(t *testing.T) {
 
 func TestMarkShowWatchedIncrementsAndPersistsEpisode(t *testing.T) {
 	dir := useTempDataDir(t)
-	writeFixture(t, dir, "currentShows.json", `[
+	writeFixture(t, dir, "shows.json", `[
   {
     "name": "Severance",
     "genre": "Sci-Fi",
@@ -88,7 +88,7 @@ func TestMarkShowWatchedIncrementsAndPersistsEpisode(t *testing.T) {
 
 func TestMarkShowWatchedCompletesAndPersistsShow(t *testing.T) {
 	dir := useTempDataDir(t)
-	writeFixture(t, dir, "currentShows.json", `[
+	writeFixture(t, dir, "shows.json", `[
   {
     "name": "One Episode Show",
     "genre": "Drama",
@@ -305,7 +305,7 @@ func writeFixture(t *testing.T, dir, name, content string) {
 func readCurrentShowsFixture(t *testing.T, dir string) []data.Show {
 	t.Helper()
 
-	raw, err := os.ReadFile(filepath.Join(dir, "currentShows.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
 	if err != nil {
 		t.Fatalf("reading current shows fixture: %v", err)
 	}
