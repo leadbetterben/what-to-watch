@@ -97,3 +97,24 @@ Both modes use the same underlying business logic, ensuring consistency across i
 1. Run `go build`
 2. Run `go install`
 3. `what-to-watch` should be available to run from any directory
+
+## Testing
+
+Run the full test suite:
+
+```bash
+go test ./...
+```
+
+Check package coverage:
+
+```bash
+go test ./... -cover
+```
+
+For a detailed coverage report:
+
+```bash
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
+```
