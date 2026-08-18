@@ -55,7 +55,7 @@ func GetAllFilms() ([]data.Film, error) {
 
 // GetAvailableGenres retrieves a list of unique genres from all shows
 func GetAvailableGenres() ([]string, error) {
-	s, err := db.ReadShows()
+	s, err := db.ReadAllShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetAvailableGenres: error reading shows: %w", err)
 	}
@@ -65,7 +65,7 @@ func GetAvailableGenres() ([]string, error) {
 
 // GetUnwatchedShowsByGenre retrieves all unwatched shows for a given genre
 func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
-	s, err := db.ReadShows()
+	s, err := db.ReadUnwatchedShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetUnwatchedShowsByGenre: error reading shows: %w", err)
 	}

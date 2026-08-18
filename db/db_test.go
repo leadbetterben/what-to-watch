@@ -10,7 +10,7 @@ import (
 	"what-to-watch/data"
 )
 
-func TestReadShows(t *testing.T) {
+func TestReadAllShows(t *testing.T) {
 	dir := useTempDataDir(t)
 	writeFixture(t, dir, "shows.json", `[
   {
@@ -23,9 +23,9 @@ func TestReadShows(t *testing.T) {
   }
 ]`)
 
-	shows, err := ReadShows()
+	shows, err := ReadAllShows()
 	if err != nil {
-		t.Fatalf("ReadShows returned error: %v", err)
+		t.Fatalf("ReadAllShows returned error: %v", err)
 	}
 
 	if len(shows) != 1 {
@@ -44,7 +44,7 @@ func TestReadShows(t *testing.T) {
 
 func TestReadCurrentShows(t *testing.T) {
 	dir := useTempDataDir(t)
-	writeFixture(t, dir, "currentShows.json", `[
+	writeFixture(t, dir, "shows.json", `[
   {
     "name": "Slow Horses",
     "genre": "Drama",
@@ -65,6 +65,28 @@ func TestReadCurrentShows(t *testing.T) {
 	}
 	if shows[0].Name != "Slow Horses" || shows[0].CurrentEpisode == nil || *shows[0].CurrentEpisode != 5 {
 		t.Fatalf("unexpected current show: %+v", shows[0])
+	}
+}
+
+func TestReadShowCategories(t *testing.T) {
+	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[
+  {"name":"Unwatched","genre":"Drama","episodes":[6],"provider":"Netflix"},
+  {"name":"Current","genre":"Drama","episodes":[6],"provider":"Netflix","currentSeries":1,"currentEpisode":2},
+  {"name":"Rewatch","genre":"Drama","episodes":[6],"provider":"Netflix","rewatch":true}
+]`)
+
+	unwatched, err := ReadUnwatchedShows()
+	if err != nil || len(unwatched) != 1 || unwatched[0].Name != "Unwatched" {
+		t.Fatalf("unexpected unwatched shows: %v %+v", err, unwatched)
+	}
+	current, err := ReadCurrentShows()
+	if err != nil || len(current) != 1 || current[0].Name != "Current" {
+		t.Fatalf("unexpected current shows: %v %+v", err, current)
+	}
+	rewatch, err := ReadRewatchShows()
+	if err != nil || len(rewatch) != 1 || rewatch[0].Name != "Rewatch" {
+		t.Fatalf("unexpected rewatch shows: %v %+v", err, rewatch)
 	}
 }
 
@@ -98,8 +120,10 @@ func TestReadersReturnErrorForMissingFiles(t *testing.T) {
 		name string
 		read func() error
 	}{
-		{name: "ReadShows", read: func() error { _, err := ReadShows(); return err }},
+		{name: "ReadAllShows", read: func() error { _, err := ReadAllShows(); return err }},
+		{name: "ReadUnwatchedShows", read: func() error { _, err := ReadUnwatchedShows(); return err }},
 		{name: "ReadCurrentShows", read: func() error { _, err := ReadCurrentShows(); return err }},
+		{name: "ReadRewatchShows", read: func() error { _, err := ReadRewatchShows(); return err }},
 		{name: "ReadFilms", read: func() error { _, err := ReadFilms(); return err }},
 	}
 
@@ -118,8 +142,10 @@ func TestReadersReturnErrorForInvalidJSON(t *testing.T) {
 		fileName string
 		read     func() error
 	}{
-		{name: "ReadShows", fileName: "shows.json", read: func() error { _, err := ReadShows(); return err }},
-		{name: "ReadCurrentShows", fileName: "currentShows.json", read: func() error { _, err := ReadCurrentShows(); return err }},
+		{name: "ReadAllShows", fileName: "shows.json", read: func() error { _, err := ReadAllShows(); return err }},
+		{name: "ReadUnwatchedShows", fileName: "shows.json", read: func() error { _, err := ReadUnwatchedShows(); return err }},
+		{name: "ReadCurrentShows", fileName: "shows.json", read: func() error { _, err := ReadCurrentShows(); return err }},
+		{name: "ReadRewatchShows", fileName: "shows.json", read: func() error { _, err := ReadRewatchShows(); return err }},
 		{name: "ReadFilms", fileName: "films.json", read: func() error { _, err := ReadFilms(); return err }},
 	}
 
@@ -137,6 +163,7 @@ func TestReadersReturnErrorForInvalidJSON(t *testing.T) {
 
 func TestWriteCurrentShowsWritesIndentedJSON(t *testing.T) {
 	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[]`)
 
 	shows := []data.Show{
 		{
@@ -153,7 +180,7 @@ func TestWriteCurrentShowsWritesIndentedJSON(t *testing.T) {
 		t.Fatalf("WriteCurrentShows returned error: %v", err)
 	}
 
-	raw, err := os.ReadFile(filepath.Join(dir, "currentShows.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
 	if err != nil {
 		t.Fatalf("reading written file: %v", err)
 	}
@@ -173,13 +200,13 @@ func TestWriteCurrentShowsWritesIndentedJSON(t *testing.T) {
 
 func TestWriteCurrentShowsReplacesExistingFileAndRemovesTempFile(t *testing.T) {
 	dir := useTempDataDir(t)
-	writeFixture(t, dir, "currentShows.json", `[]`)
+	writeFixture(t, dir, "shows.json", `[]`)
 
 	if err := WriteCurrentShows([]data.Show{{Name: "Andor", Genre: "Sci-Fi"}}); err != nil {
 		t.Fatalf("WriteCurrentShows returned error: %v", err)
 	}
 
-	raw, err := os.ReadFile(filepath.Join(dir, "currentShows.json"))
+	raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
 	if err != nil {
 		t.Fatalf("reading replaced file: %v", err)
 	}
@@ -193,6 +220,26 @@ func TestWriteCurrentShowsReplacesExistingFileAndRemovesTempFile(t *testing.T) {
 	}
 	if len(matches) != 0 {
 		t.Fatalf("expected no temp files, found %v", matches)
+	}
+}
+
+func TestWriteCurrentShowsPreservesOtherCategories(t *testing.T) {
+	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[
+  {"name":"Unwatched","provider":"Netflix"},
+  {"name":"Current","provider":"Netflix","currentSeries":1,"currentEpisode":1},
+  {"name":"Rewatch","provider":"Netflix","rewatch":true}
+]`)
+
+	if err := WriteCurrentShows([]data.Show{{Name: "Current", Provider: "Netflix", CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}}); err != nil {
+		t.Fatalf("WriteCurrentShows returned error: %v", err)
+	}
+	all, err := ReadAllShows()
+	if err != nil || len(all) != 3 {
+		t.Fatalf("expected three preserved shows, got %v %+v", err, all)
+	}
+	if all[0].Name != "Unwatched" || all[1].Name != "Rewatch" || all[2].Name != "Current" {
+		t.Fatalf("unexpected merged order/content: %+v", all)
 	}
 }
 

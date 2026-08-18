@@ -108,7 +108,7 @@ func GetUniqueGenres(shows []data.Show) []string {
 func GetUnwatchedShowsByGenre(shows []data.Show, genre string) []data.Show {
 	var unwatched []data.Show
 	for _, s := range shows {
-		if s.Genre == genre && s.CurrentSeries == nil && s.CurrentEpisode == nil {
+		if s.Genre == genre && s.CurrentSeries == nil && s.CurrentEpisode == nil && !s.Rewatch {
 			unwatched = append(unwatched, s)
 		}
 	}
