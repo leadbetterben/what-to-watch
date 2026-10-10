@@ -19,6 +19,8 @@ var (
 	getUnwatchedShowsByGenre  = handlers.GetUnwatchedShowsByGenre
 	getHalloweenEpisodes      = handlers.GetHalloweenEpisodes
 	getChristmasEpisodes      = handlers.GetChristmasEpisodes
+	getRandomHalloweenEpisode = handlers.GetRandomHalloweenEpisode
+	getRandomChristmasEpisode = handlers.GetRandomChristmasEpisode
 )
 
 // Run starts the interactive CLI mode
@@ -32,7 +34,9 @@ func Run() {
 	fmt.Println("3. Shows by genre")
 	fmt.Println("4. Halloween episodes")
 	fmt.Println("5. Christmas episodes")
-	fmt.Print("Enter your choice (1, 2, 3, 4, or 5): ")
+	fmt.Println("6. Random Halloween episode")
+	fmt.Println("7. Random Christmas episode")
+	fmt.Print("Enter your choice (1, 2, 3, 4, 5, 6, or 7): ")
 
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
@@ -48,8 +52,12 @@ func Run() {
 		viewSeasonalSpecials("Halloween", getHalloweenEpisodes)
 	case "5":
 		viewSeasonalSpecials("Christmas", getChristmasEpisodes)
+	case "6":
+		viewRandomSeasonalSpecial("Halloween", getRandomHalloweenEpisode)
+	case "7":
+		viewRandomSeasonalSpecial("Christmas", getRandomChristmasEpisode)
 	default:
-		fmt.Println("Invalid input. Please enter 1, 2, 3, 4, or 5.")
+		fmt.Println("Invalid input. Please enter a number from 1 to 7.")
 	}
 }
 
@@ -156,4 +164,14 @@ func viewSeasonalSpecials(category string, getEpisodes func() ([]data.ShowSpecia
 
 	fmt.Printf("%s episodes:\n", category)
 	fmt.Println(formatSpecialEpisodesTable(category, episodes))
+}
+
+func viewRandomSeasonalSpecial(category string, getEpisode func() (data.ShowSpecialEpisode, error)) {
+	episode, err := getEpisode()
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+
+	fmt.Printf("Random %s episode: %s (%s), Series %d Episode %d\n", strings.ToLower(category), episode.ShowName, episode.Provider, episode.Series, episode.Episode)
 }

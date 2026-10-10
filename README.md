@@ -37,10 +37,12 @@ What would you like to view?
 3. Shows by genre
 4. Halloween episodes
 5. Christmas episodes
-Enter your choice (1, 2, 3, 4, or 5):
+6. Random Halloween episode
+7. Random Christmas episode
+Enter your choice (1, 2, 3, 4, 5, 6, or 7):
 ```
 
-Select options 1–3 for the existing show, film, and genre views, or choose 4 or 5 to list curated Halloween or Christmas episodes across the shows collection.
+Select options 1–3 for the existing show, film, and genre views, 4 or 5 to list curated Halloween or Christmas episodes, or 6 or 7 to get one at random.
 
 ### HTTP Mode
 
@@ -61,6 +63,8 @@ The port can be customized with the `-port` flag (default: 8080).
 - `GET /genres` — Get all available genres (JSON)
 - `GET /specials/halloween` — Get curated Halloween episodes across shows
 - `GET /specials/christmas` — Get curated Christmas episodes across shows
+- `GET /specials/halloween/random` — Get one random Halloween episode
+- `GET /specials/christmas/random` — Get one random Christmas episode
 
 #### Example API Calls
 
@@ -89,6 +93,12 @@ curl http://localhost:8080/specials/halloween
 # Get curated Christmas episodes
 curl http://localhost:8080/specials/christmas
 
+# Get one random Halloween episode
+curl http://localhost:8080/specials/halloween/random
+
+# Get one random Christmas episode
+curl http://localhost:8080/specials/christmas/random
+
 ```
 
 ## Architecture
@@ -102,6 +112,7 @@ The program uses consistent handler functions that can be called by either inter
   - `GetAvailableGenres()` — Retrieves all unique genres from shows
   - `GetUnwatchedShowsByGenre(genre)` — Retrieves unwatched shows for a specific genre
   - `GetHalloweenEpisodes()` / `GetChristmasEpisodes()` — Retrieves curated seasonal episode numbers with show and provider context
+  - `GetRandomHalloweenEpisode()` / `GetRandomChristmasEpisode()` — Retrieves one curated seasonal episode at random
 - **`cmd/cli/cli.go`** — Interactive CLI interface that calls the handlers
 - **`cmd/http/http.go`** — HTTP REST API that calls the same handlers
 

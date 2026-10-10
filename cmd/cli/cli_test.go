@@ -209,6 +209,65 @@ func TestRunSeasonalSpecialMenuOptions(t *testing.T) {
 	}
 }
 
+func TestRunRandomSeasonalSpecialMenuOptions(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{name: "Halloween", input: "6\n"},
+		{name: "Christmas", input: "7\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restore := stubCLIHandlers()
+			t.Cleanup(restore)
+
+			var called bool
+			getRandomHalloweenEpisode = func() (data.ShowSpecialEpisode, error) {
+				called = true
+				return data.ShowSpecialEpisode{ShowName: "Example Show", Provider: "Netflix", Series: 2, Episode: 5}, nil
+			}
+			getRandomChristmasEpisode = func() (data.ShowSpecialEpisode, error) {
+				called = true
+				return data.ShowSpecialEpisode{ShowName: "Example Show", Provider: "Netflix", Series: 3, Episode: 4}, nil
+			}
+
+			inputReader, inputWriter, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("create stdin pipe: %v", err)
+			}
+			if _, err := inputWriter.WriteString(tt.input); err != nil {
+				t.Fatalf("write stdin: %v", err)
+			}
+			if err := inputWriter.Close(); err != nil {
+				t.Fatalf("close stdin writer: %v", err)
+			}
+			originalStdin := os.Stdin
+			os.Stdin = inputReader
+			output := captureOutput(t, Run)
+			os.Stdin = originalStdin
+			inputReader.Close()
+
+			assertContains(t, output, "6. Random Halloween episode")
+			assertContains(t, output, "7. Random Christmas episode")
+			assertContains(t, output, "Random "+strings.ToLower(tt.name)+" episode: Example Show (Netflix)")
+			if !called {
+				t.Fatal("expected random episode handler to be called")
+			}
+		})
+	}
+}
+
+func TestViewRandomSeasonalSpecialPrintsError(t *testing.T) {
+	output := captureOutput(t, func() {
+		viewRandomSeasonalSpecial("Halloween", func() (data.ShowSpecialEpisode, error) {
+			return data.ShowSpecialEpisode{}, errors.New("no halloween episodes found")
+		})
+	})
+	assertContains(t, output, "Error: no halloween episodes found")
+}
+
 func TestViewSeasonalSpecialsPrintsEmptyResultAndErrors(t *testing.T) {
 	emptyOutput := captureOutput(t, func() {
 		viewSeasonalSpecials("Halloween", func() ([]data.ShowSpecialEpisode, error) {
@@ -335,6 +394,8 @@ func stubCLIHandlers() func() {
 	originalGetUnwatchedShowsByGenre := getUnwatchedShowsByGenre
 	originalGetHalloweenEpisodes := getHalloweenEpisodes
 	originalGetChristmasEpisodes := getChristmasEpisodes
+	originalGetRandomHalloweenEpisode := getRandomHalloweenEpisode
+	originalGetRandomChristmasEpisode := getRandomChristmasEpisode
 
 	getCurrentlyWatchingShows = func() ([]data.Show, error) { return nil, nil }
 	markShowWatched = func(int) (bool, error) { return false, nil }
@@ -343,6 +404,8 @@ func stubCLIHandlers() func() {
 	getUnwatchedShowsByGenre = func(string) ([]data.Show, error) { return nil, nil }
 	getHalloweenEpisodes = func() ([]data.ShowSpecialEpisode, error) { return nil, nil }
 	getChristmasEpisodes = func() ([]data.ShowSpecialEpisode, error) { return nil, nil }
+	getRandomHalloweenEpisode = func() (data.ShowSpecialEpisode, error) { return data.ShowSpecialEpisode{}, nil }
+	getRandomChristmasEpisode = func() (data.ShowSpecialEpisode, error) { return data.ShowSpecialEpisode{}, nil }
 
 	return func() {
 		getCurrentlyWatchingShows = originalGetCurrentlyWatchingShows
@@ -352,6 +415,8 @@ func stubCLIHandlers() func() {
 		getUnwatchedShowsByGenre = originalGetUnwatchedShowsByGenre
 		getHalloweenEpisodes = originalGetHalloweenEpisodes
 		getChristmasEpisodes = originalGetChristmasEpisodes
+		getRandomHalloweenEpisode = originalGetRandomHalloweenEpisode
+		getRandomChristmasEpisode = originalGetRandomChristmasEpisode
 	}
 }
 

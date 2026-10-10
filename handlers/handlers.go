@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math/rand"
 
 	"what-to-watch/data"
 	"what-to-watch/db"
@@ -81,6 +82,28 @@ func GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error) {
 // GetChristmasEpisodes retrieves all curated Christmas episodes.
 func GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error) {
 	return getSpecialEpisodes(data.SpecialCategoryChristmas)
+}
+
+// GetRandomHalloweenEpisode retrieves one curated Halloween episode at random.
+func GetRandomHalloweenEpisode() (data.ShowSpecialEpisode, error) {
+	return getRandomSpecialEpisode(data.SpecialCategoryHalloween)
+}
+
+// GetRandomChristmasEpisode retrieves one curated Christmas episode at random.
+func GetRandomChristmasEpisode() (data.ShowSpecialEpisode, error) {
+	return getRandomSpecialEpisode(data.SpecialCategoryChristmas)
+}
+
+func getRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpisode, error) {
+	episodes, err := getSpecialEpisodes(category)
+	if err != nil {
+		return data.ShowSpecialEpisode{}, err
+	}
+	if len(episodes) == 0 {
+		return data.ShowSpecialEpisode{}, fmt.Errorf("no %s episodes found", category)
+	}
+
+	return episodes[rand.Intn(len(episodes))], nil
 }
 
 func getSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
