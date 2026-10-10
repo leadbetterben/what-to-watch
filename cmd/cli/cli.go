@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"what-to-watch/data"
 	"what-to-watch/handlers"
 )
 
@@ -16,6 +17,8 @@ var (
 	getAllFilms               = handlers.GetAllFilms
 	getAvailableGenres        = handlers.GetAvailableGenres
 	getUnwatchedShowsByGenre  = handlers.GetUnwatchedShowsByGenre
+	getHalloweenEpisodes      = handlers.GetHalloweenEpisodes
+	getChristmasEpisodes      = handlers.GetChristmasEpisodes
 )
 
 // Run starts the interactive CLI mode
@@ -27,7 +30,9 @@ func Run() {
 	fmt.Println("1. Currently watching shows")
 	fmt.Println("2. Films")
 	fmt.Println("3. Shows by genre")
-	fmt.Print("Enter your choice (1, 2, or 3): ")
+	fmt.Println("4. Halloween episodes")
+	fmt.Println("5. Christmas episodes")
+	fmt.Print("Enter your choice (1, 2, 3, 4, or 5): ")
 
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
@@ -39,8 +44,12 @@ func Run() {
 		viewFilms()
 	case "3":
 		viewShowsByGenre(reader)
+	case "4":
+		viewSeasonalSpecials("Halloween", getHalloweenEpisodes)
+	case "5":
+		viewSeasonalSpecials("Christmas", getChristmasEpisodes)
 	default:
-		fmt.Println("Invalid input. Please enter 1, 2, or 3.")
+		fmt.Println("Invalid input. Please enter 1, 2, 3, 4, or 5.")
 	}
 }
 
@@ -136,4 +145,15 @@ func viewShowsByGenre(reader *bufio.Reader) {
 
 	fmt.Printf("Unwatched shows in genre '%s':\n", selectedGenre)
 	fmt.Println(formatShowsByGenreTable(shows))
+}
+
+func viewSeasonalSpecials(category string, getEpisodes func() ([]data.ShowSpecialEpisode, error)) {
+	episodes, err := getEpisodes()
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+
+	fmt.Printf("%s episodes:\n", category)
+	fmt.Println(formatSpecialEpisodesTable(category, episodes))
 }

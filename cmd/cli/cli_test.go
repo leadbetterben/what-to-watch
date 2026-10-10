@@ -156,6 +156,75 @@ func TestViewFilmsPrintsHandlerError(t *testing.T) {
 	assertContains(t, output, "Error: cannot read films")
 }
 
+func TestRunSeasonalSpecialMenuOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		category data.SpecialCategory
+	}{
+		{name: "Halloween", input: "4\n", category: data.SpecialCategoryHalloween},
+		{name: "Christmas", input: "5\n", category: data.SpecialCategoryChristmas},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restore := stubCLIHandlers()
+			t.Cleanup(restore)
+
+			episode := data.ShowSpecialEpisode{
+				ShowName: "Example Show",
+				Provider: "Netflix",
+				Category: tt.category,
+				Series:   2,
+				Episode:  5,
+			}
+			getEpisodes := func() ([]data.ShowSpecialEpisode, error) {
+				return []data.ShowSpecialEpisode{episode}, nil
+			}
+			getHalloweenEpisodes = getEpisodes
+			getChristmasEpisodes = getEpisodes
+
+			inputReader, inputWriter, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("create stdin pipe: %v", err)
+			}
+			if _, err := inputWriter.WriteString(tt.input); err != nil {
+				t.Fatalf("write stdin: %v", err)
+			}
+			if err := inputWriter.Close(); err != nil {
+				t.Fatalf("close stdin writer: %v", err)
+			}
+			originalStdin := os.Stdin
+			os.Stdin = inputReader
+			output := captureOutput(t, Run)
+			os.Stdin = originalStdin
+			inputReader.Close()
+
+			assertContains(t, output, "4. Halloween episodes")
+			assertContains(t, output, "5. Christmas episodes")
+			assertContains(t, output, "Example Show")
+			assertContains(t, output, "Netflix")
+			assertContains(t, output, tt.name+" episodes:")
+		})
+	}
+}
+
+func TestViewSeasonalSpecialsPrintsEmptyResultAndErrors(t *testing.T) {
+	emptyOutput := captureOutput(t, func() {
+		viewSeasonalSpecials("Halloween", func() ([]data.ShowSpecialEpisode, error) {
+			return nil, nil
+		})
+	})
+	assertContains(t, emptyOutput, "No halloween episodes found.")
+
+	errorOutput := captureOutput(t, func() {
+		viewSeasonalSpecials("Christmas", func() ([]data.ShowSpecialEpisode, error) {
+			return nil, errors.New("cannot read shows")
+		})
+	})
+	assertContains(t, errorOutput, "Error: cannot read shows")
+}
+
 func TestViewShowsByGenreDisplaysSelectedGenre(t *testing.T) {
 	restore := stubCLIHandlers()
 	t.Cleanup(restore)
@@ -264,12 +333,16 @@ func stubCLIHandlers() func() {
 	originalGetAllFilms := getAllFilms
 	originalGetAvailableGenres := getAvailableGenres
 	originalGetUnwatchedShowsByGenre := getUnwatchedShowsByGenre
+	originalGetHalloweenEpisodes := getHalloweenEpisodes
+	originalGetChristmasEpisodes := getChristmasEpisodes
 
 	getCurrentlyWatchingShows = func() ([]data.Show, error) { return nil, nil }
 	markShowWatched = func(int) (bool, error) { return false, nil }
 	getAllFilms = func() ([]data.Film, error) { return nil, nil }
 	getAvailableGenres = func() ([]string, error) { return nil, nil }
 	getUnwatchedShowsByGenre = func(string) ([]data.Show, error) { return nil, nil }
+	getHalloweenEpisodes = func() ([]data.ShowSpecialEpisode, error) { return nil, nil }
+	getChristmasEpisodes = func() ([]data.ShowSpecialEpisode, error) { return nil, nil }
 
 	return func() {
 		getCurrentlyWatchingShows = originalGetCurrentlyWatchingShows
@@ -277,6 +350,8 @@ func stubCLIHandlers() func() {
 		getAllFilms = originalGetAllFilms
 		getAvailableGenres = originalGetAvailableGenres
 		getUnwatchedShowsByGenre = originalGetUnwatchedShowsByGenre
+		getHalloweenEpisodes = originalGetHalloweenEpisodes
+		getChristmasEpisodes = originalGetChristmasEpisodes
 	}
 }
 

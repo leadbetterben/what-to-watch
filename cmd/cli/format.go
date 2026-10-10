@@ -161,3 +161,46 @@ func formatFilmsTable(films []data.Film) string {
 
 	return buf.String()
 }
+
+func formatSpecialEpisodesTable(category string, episodes []data.ShowSpecialEpisode) string {
+	if len(episodes) == 0 {
+		return fmt.Sprintf("No %s episodes found.\n", strings.ToLower(category))
+	}
+
+	labels := []string{"Index", "Show", "Provider", "Series", "Episode"}
+	widths := []int{len(labels[0]), len(labels[1]), len(labels[2]), len(labels[3]), len(labels[4])}
+	for _, episode := range episodes {
+		values := []string{
+			strconv.Itoa(0),
+			episode.ShowName,
+			episode.Provider,
+			strconv.Itoa(episode.Series),
+			strconv.Itoa(episode.Episode),
+		}
+		for i, value := range values {
+			if len(value) > widths[i] {
+				widths[i] = len(value)
+			}
+		}
+	}
+	for i := range episodes {
+		if width := len(strconv.Itoa(i + 1)); width > widths[0] {
+			widths[0] = width
+		}
+	}
+
+	format := fmt.Sprintf("%%-%ds  %%-%ds  %%-%ds  %%-%ds  %%-%ds\n", widths[0], widths[1], widths[2], widths[3], widths[4])
+	var buf strings.Builder
+	buf.WriteString(fmt.Sprintf(format, labels[0], labels[1], labels[2], labels[3], labels[4]))
+	separators := make([]string, len(widths))
+	for i, width := range widths {
+		separators[i] = strings.Repeat("-", width)
+	}
+	buf.WriteString(fmt.Sprintf(format, separators[0], separators[1], separators[2], separators[3], separators[4]))
+	for i, episode := range episodes {
+		buf.WriteString(fmt.Sprintf(format,
+			strconv.Itoa(i+1), episode.ShowName, episode.Provider,
+			strconv.Itoa(episode.Series), strconv.Itoa(episode.Episode)))
+	}
+	return buf.String()
+}

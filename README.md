@@ -35,10 +35,12 @@ What would you like to view?
 1. Currently watching shows
 2. Films
 3. Shows by genre
-Enter your choice (1, 2, or 3):
+4. Halloween episodes
+5. Christmas episodes
+Enter your choice (1, 2, 3, 4, or 5):
 ```
 
-Select option 1 to view and update currently watching shows, option 2 to view your films collection, or option 3 to see unwatched shows filtered by genre.
+Select options 1–3 for the existing show, film, and genre views, or choose 4 or 5 to list curated Halloween or Christmas episodes across the shows collection.
 
 ### HTTP Mode
 

@@ -13,7 +13,7 @@ Key files and intent
 
 - `main.go` — dispatcher: parses flags (`-mode=cli|http`, `-port=PORT`), routes to CLI or HTTP mode.
 - `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
-- `cmd/cli/cli.go` — interactive CLI interface; calls handlers.
+- `cmd/cli/cli.go` — interactive CLI interface; calls handlers, including options for Halloween and Christmas episodes.
 - `cmd/http/http.go` — HTTP REST API server; implements `Handler` interface pattern for dependency injection in tests.
 - `cmd/http/http_test.go` — Table-driven tests for all HTTP handler functions. Uses `mockHandler` to stub business logic calls.
 - `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes category readers, `WriteCurrentShows`, and `ReadFilms`).
