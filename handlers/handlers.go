@@ -72,3 +72,22 @@ func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
 
 	return shows.GetUnwatchedShowsByGenre(s, genre), nil
 }
+
+// GetHalloweenEpisodes retrieves all curated Halloween episodes.
+func GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error) {
+	return getSpecialEpisodes(data.SpecialCategoryHalloween)
+}
+
+// GetChristmasEpisodes retrieves all curated Christmas episodes.
+func GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error) {
+	return getSpecialEpisodes(data.SpecialCategoryChristmas)
+}
+
+func getSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
+	allShows, err := db.ReadAllShows()
+	if err != nil {
+		return nil, fmt.Errorf("error reading shows: %w", err)
+	}
+
+	return shows.GetSpecialEpisodes(allShows, category), nil
+}

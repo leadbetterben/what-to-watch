@@ -57,6 +57,8 @@ The port can be customized with the `-port` flag (default: 8080).
 - `POST /shows/watch?index=1` — Mark show as watched
 - `GET /films` — Get all films (JSON)
 - `GET /genres` — Get all available genres (JSON)
+- `GET /specials/halloween` — Get curated Halloween episodes across shows
+- `GET /specials/christmas` — Get curated Christmas episodes across shows
 
 #### Example API Calls
 
@@ -79,6 +81,12 @@ curl http://localhost:8080/films
 # Get available genres
 curl http://localhost:8080/genres
 
+# Get curated Halloween episodes
+curl http://localhost:8080/specials/halloween
+
+# Get curated Christmas episodes
+curl http://localhost:8080/specials/christmas
+
 ```
 
 ## Architecture
@@ -91,6 +99,7 @@ The program uses consistent handler functions that can be called by either inter
   - `GetAllFilms()` — Retrieves all films
   - `GetAvailableGenres()` — Retrieves all unique genres from shows
   - `GetUnwatchedShowsByGenre(genre)` — Retrieves unwatched shows for a specific genre
+  - `GetHalloweenEpisodes()` / `GetChristmasEpisodes()` — Retrieves curated seasonal episode numbers with show and provider context
 - **`cmd/cli/cli.go`** — Interactive CLI interface that calls the handlers
 - **`cmd/http/http.go`** — HTTP REST API that calls the same handlers
 

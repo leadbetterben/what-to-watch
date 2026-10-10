@@ -17,8 +17,8 @@ Key files and intent
 - `cmd/http/http.go` — HTTP REST API server; implements `Handler` interface pattern for dependency injection in tests.
 - `cmd/http/http_test.go` — Table-driven tests for all HTTP handler functions. Uses `mockHandler` to stub business logic calls.
 - `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes category readers, `WriteCurrentShows`, and `ReadFilms`).
-- `data/data.go` — `Show` and `Film` struct types used across packages.
-- `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, and `GetUnwatchedShowsByGenre`.
+- `data/data.go` — `Show`, `SpecialEpisode`, `SpecialCategory`, and `Film` types used across packages. Seasonal categories are the constants `SpecialCategoryHalloween` and `SpecialCategoryChristmas`.
+- `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, `GetUnwatchedShowsByGenre`, and `GetSpecialEpisodes`.
 - `shows/shows_test.go` — unit tests for `shows` package (fast, in-memory).
 - `db/shows.json` and `db/films.json` — canonical on-disk data used when running `go run .`. Show categories are inferred from current position fields and the `rewatch` flag.
 
@@ -74,6 +74,7 @@ The program is refactored to support both CLI and HTTP modes using consistent ha
 - This ensures the same business logic applies regardless of interface
 - Single source of truth: changes to logic only need to be made once
 - Easy to extend: adding features updates both CLI and HTTP simultaneously
+- Seasonal episode data is stored under each show as `specialEpisodes` entries with category, series, and episode; HTTP exposes `/specials/halloween` and `/specials/christmas`.
 
 Documentation
 

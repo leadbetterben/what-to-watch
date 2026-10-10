@@ -114,3 +114,24 @@ func GetUnwatchedShowsByGenre(shows []data.Show, genre string) []data.Show {
 	}
 	return unwatched
 }
+
+// GetSpecialEpisodes returns curated episodes in the requested category,
+// including the parent show's name and provider.
+func GetSpecialEpisodes(shows []data.Show, category data.SpecialCategory) []data.ShowSpecialEpisode {
+	episodes := make([]data.ShowSpecialEpisode, 0)
+	for _, show := range shows {
+		for _, special := range show.SpecialEpisodes {
+			if special.Category != category {
+				continue
+			}
+			episodes = append(episodes, data.ShowSpecialEpisode{
+				ShowName: show.Name,
+				Provider: show.Provider,
+				Category: special.Category,
+				Series:   special.Series,
+				Episode:  special.Episode,
+			})
+		}
+	}
+	return episodes
+}

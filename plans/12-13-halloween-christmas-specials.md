@@ -102,9 +102,10 @@ Represent a curated episode as an entry nested in its parent show in
 - Define a result type for the flattened response, such as
   `data.ShowSpecialEpisode` containing show name, provider, category, series,
   and episode number.
-- Accept `data.SpecialCategory` in the query function and validate it against
-  the two constants. Unsupported values decoded from JSON or passed by callers
-  should produce a clear error rather than an empty successful response.
+- Accept `data.SpecialCategory` in the query function. The controlled handler
+  call sites pass only the two category constants. Persisted category strings
+  are ordinary JSON strings and are expected to use one of the two documented
+  values.
 - Add handler functions for Halloween and Christmas, or a shared category
   handler with thin `GetHalloweenEpisodes()` and `GetChristmasEpisodes()`
   wrappers. Read all shows through `db.ReadAllShows()`.

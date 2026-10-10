@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"what-to-watch/data"
@@ -19,6 +20,8 @@ type mockHandler struct {
 	getFilmsFunc            func() ([]data.Film, error)
 	getGenresFunc           func() ([]string, error)
 	getUnwatchedByGenreFunc func(genre string) ([]data.Show, error)
+	getHalloweenFunc        func() ([]data.ShowSpecialEpisode, error)
+	getChristmasFunc        func() ([]data.ShowSpecialEpisode, error)
 }
 
 func (m *mockHandler) GetCurrentlyWatchingShows() ([]data.Show, error) {
@@ -39,6 +42,14 @@ func (m *mockHandler) GetAvailableGenres() ([]string, error) {
 
 func (m *mockHandler) GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
 	return m.getUnwatchedByGenreFunc(genre)
+}
+
+func (m *mockHandler) GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error) {
+	return m.getHalloweenFunc()
+}
+
+func (m *mockHandler) GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error) {
+	return m.getChristmasFunc()
 }
 
 func TestHandleGetShows(t *testing.T) {
@@ -452,6 +463,80 @@ func TestHandleGetGenres(t *testing.T) {
 	}
 }
 
+func TestHandleGetSpecialEpisodes(t *testing.T) {
+	wantHalloween := []data.ShowSpecialEpisode{{
+		ShowName: "Example Show",
+		Provider: "Netflix",
+		Category: data.SpecialCategoryHalloween,
+		Series:   2,
+		Episode:  5,
+	}}
+	wantChristmas := []data.ShowSpecialEpisode{{
+		ShowName: "Example Show",
+		Provider: "Netflix",
+		Category: data.SpecialCategoryChristmas,
+		Series:   3,
+		Episode:  4,
+	}}
+
+	tests := []struct {
+		name     string
+		path     string
+		method   string
+		result   []data.ShowSpecialEpisode
+		err      error
+		wantCode int
+	}{
+		{name: "halloween", path: "/specials/halloween", method: http.MethodGet, result: wantHalloween, wantCode: http.StatusOK},
+		{name: "christmas", path: "/specials/christmas", method: http.MethodGet, result: wantChristmas, wantCode: http.StatusOK},
+		{name: "empty result", path: "/specials/halloween", method: http.MethodGet, result: []data.ShowSpecialEpisode{}, wantCode: http.StatusOK},
+		{name: "handler error", path: "/specials/christmas", method: http.MethodGet, err: fmt.Errorf("database error"), wantCode: http.StatusInternalServerError},
+		{name: "method not allowed", path: "/specials/halloween", method: http.MethodPost, wantCode: http.StatusMethodNotAllowed},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockHandler{
+				getHalloweenFunc: func() ([]data.ShowSpecialEpisode, error) {
+					if tt.path == "/specials/halloween" {
+						return tt.result, tt.err
+					}
+					return wantHalloween, nil
+				},
+				getChristmasFunc: func() ([]data.ShowSpecialEpisode, error) {
+					if tt.path == "/specials/christmas" {
+						return tt.result, tt.err
+					}
+					return wantChristmas, nil
+				},
+			}
+			server := NewServerWithHandler(8080, mock)
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			w := httptest.NewRecorder()
+			if tt.path == "/specials/halloween" {
+				server.handleGetHalloweenEpisodes(w, req)
+			} else {
+				server.handleGetChristmasEpisodes(w, req)
+			}
+
+			if w.Code != tt.wantCode {
+				t.Fatalf("expected status %d, got %d: %s", tt.wantCode, w.Code, w.Body.String())
+			}
+			if tt.wantCode != http.StatusOK {
+				return
+			}
+
+			var got []data.ShowSpecialEpisode
+			if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+				t.Fatalf("unmarshal response: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.result) {
+				t.Errorf("expected %+v, got %+v", tt.result, got)
+			}
+		})
+	}
+}
+
 func TestHandleHealth(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -515,6 +600,12 @@ func TestServerRoutes(t *testing.T) {
 		},
 		getGenresFunc: func() ([]string, error) {
 			return []string{"Drama", "Comedy"}, nil
+		},
+		getHalloweenFunc: func() ([]data.ShowSpecialEpisode, error) {
+			return []data.ShowSpecialEpisode{{ShowName: "Slow Horses", Provider: "Apple TV+", Category: data.SpecialCategoryHalloween, Series: 1, Episode: 4}}, nil
+		},
+		getChristmasFunc: func() ([]data.ShowSpecialEpisode, error) {
+			return []data.ShowSpecialEpisode{{ShowName: "Slow Horses", Provider: "Apple TV+", Category: data.SpecialCategoryChristmas, Series: 2, Episode: 3}}, nil
 		},
 	}
 
@@ -599,6 +690,30 @@ func TestServerRoutes(t *testing.T) {
 			t.Fatalf("unexpected genres response: %+v", genres)
 		}
 	})
+
+	for _, test := range []struct {
+		path     string
+		category data.SpecialCategory
+		series   int
+		episode  int
+	}{
+		{path: "/specials/halloween", category: data.SpecialCategoryHalloween, series: 1, episode: 4},
+		{path: "/specials/christmas", category: data.SpecialCategoryChristmas, series: 2, episode: 3},
+	} {
+		t.Run("GET "+test.path, func(t *testing.T) {
+			resp, body := getRoute(t, testServer.URL+test.path)
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("expected status 200, got %d", resp.StatusCode)
+			}
+			var episodes []data.ShowSpecialEpisode
+			unmarshalBody(t, body, &episodes)
+			if len(episodes) != 1 || episodes[0].ShowName != "Slow Horses" || episodes[0].Category != test.category || episodes[0].Series != test.series || episodes[0].Episode != test.episode {
+				t.Fatalf("unexpected special episode response: %+v", episodes)
+			}
+		})
+	}
 
 	t.Run("GET /health", func(t *testing.T) {
 		resp, body := getRoute(t, testServer.URL+"/health")
