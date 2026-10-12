@@ -16,6 +16,8 @@ type Handler interface {
 	GetAllFilms() ([]data.Film, error)
 	GetAvailableGenres() ([]string, error)
 	GetUnwatchedShowsByGenre(genre string) ([]data.Show, error)
+	GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error)
+	GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error)
 }
 
 // defaultHandler uses the handlers package functions
@@ -39,6 +41,14 @@ func (h *defaultHandler) GetAvailableGenres() ([]string, error) {
 
 func (h *defaultHandler) GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
 	return handlers.GetUnwatchedShowsByGenre(genre)
+}
+
+func (h *defaultHandler) GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error) {
+	return handlers.GetHalloweenEpisodes()
+}
+
+func (h *defaultHandler) GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error) {
+	return handlers.GetChristmasEpisodes()
 }
 
 // Server holds the HTTP server instance
@@ -83,6 +93,12 @@ func (s *Server) routes() http.Handler {
 	})
 	mux.HandleFunc("/genres", func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetGenres(w, r)
+	})
+	mux.HandleFunc("/specials/halloween", func(w http.ResponseWriter, r *http.Request) {
+		s.handleGetHalloweenEpisodes(w, r)
+	})
+	mux.HandleFunc("/specials/christmas", func(w http.ResponseWriter, r *http.Request) {
+		s.handleGetChristmasEpisodes(w, r)
 	})
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		s.handleHealth(w, r)
@@ -173,6 +189,28 @@ func (s *Server) handleGetGenres(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, genres)
+}
+
+func (s *Server) handleGetHalloweenEpisodes(w http.ResponseWriter, r *http.Request) {
+	s.handleGetSpecialEpisodes(w, r, s.handler.GetHalloweenEpisodes)
+}
+
+func (s *Server) handleGetChristmasEpisodes(w http.ResponseWriter, r *http.Request) {
+	s.handleGetSpecialEpisodes(w, r, s.handler.GetChristmasEpisodes)
+}
+
+func (s *Server) handleGetSpecialEpisodes(w http.ResponseWriter, r *http.Request, get func() ([]data.ShowSpecialEpisode, error)) {
+	if r.Method != http.MethodGet {
+		writeMethodError(w, http.MethodGet)
+		return
+	}
+
+	episodes, err := get()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, episodes)
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {

@@ -182,6 +182,50 @@ func TestGetUnwatchedShowsByGenre(t *testing.T) {
 	}
 }
 
+func TestGetSeasonalSpecialEpisodes(t *testing.T) {
+	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[
+  {
+    "name": "Example Show",
+    "provider": "Netflix",
+    "specialEpisodes": [
+      {"category": "halloween", "series": 2, "episode": 5},
+      {"category": "christmas", "series": 3, "episode": 4}
+    ]
+  },
+  {
+    "name": "Example Show",
+    "provider": "Prime",
+    "specialEpisodes": [
+      {"category": "halloween", "series": 1, "episode": 6}
+    ]
+  }
+]`)
+
+	halloween, err := GetHalloweenEpisodes()
+	if err != nil {
+		t.Fatalf("GetHalloweenEpisodes returned error: %v", err)
+	}
+	wantHalloween := []data.ShowSpecialEpisode{
+		{ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
+		{ShowName: "Example Show", Provider: "Prime", Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
+	}
+	if !reflect.DeepEqual(halloween, wantHalloween) {
+		t.Fatalf("expected %+v, got %+v", wantHalloween, halloween)
+	}
+
+	christmas, err := GetChristmasEpisodes()
+	if err != nil {
+		t.Fatalf("GetChristmasEpisodes returned error: %v", err)
+	}
+	wantChristmas := []data.ShowSpecialEpisode{{
+		ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4,
+	}}
+	if !reflect.DeepEqual(christmas, wantChristmas) {
+		t.Fatalf("expected %+v, got %+v", wantChristmas, christmas)
+	}
+}
+
 func TestHandlersSurfaceReadErrors(t *testing.T) {
 	useTempDataDir(t)
 
@@ -229,6 +273,22 @@ func TestHandlersSurfaceReadErrors(t *testing.T) {
 				return err
 			},
 			wantError: "GetUnwatchedShowsByGenre: error reading shows",
+		},
+		{
+			name: "GetHalloweenEpisodes",
+			call: func() error {
+				_, err := GetHalloweenEpisodes()
+				return err
+			},
+			wantError: "error reading shows",
+		},
+		{
+			name: "GetChristmasEpisodes",
+			call: func() error {
+				_, err := GetChristmasEpisodes()
+				return err
+			},
+			wantError: "error reading shows",
 		},
 	}
 

@@ -80,3 +80,25 @@ func TestFormatFilmsTableEmpty(t *testing.T) {
 		t.Fatalf("expected %q, got %q", expected, got)
 	}
 }
+
+func TestFormatSpecialEpisodesTable(t *testing.T) {
+	episodes := []data.ShowSpecialEpisode{{
+		ShowName: "Example Show",
+		Provider: "Netflix",
+		Series:   2,
+		Episode:  5,
+	}}
+	want := "" +
+		"Index  Show          Provider  Series  Episode\n" +
+		"-----  ------------  --------  ------  -------\n" +
+		"1      Example Show  Netflix   2       5      \n"
+	if got := formatSpecialEpisodesTable("Halloween", episodes); got != want {
+		t.Fatalf("expected:\n%q\ngot:\n%q", want, got)
+	}
+}
+
+func TestFormatSpecialEpisodesTableEmpty(t *testing.T) {
+	if got, want := formatSpecialEpisodesTable("Halloween", nil), "No halloween episodes found.\n"; got != want {
+		t.Fatalf("expected %q, got %q", want, got)
+	}
+}
