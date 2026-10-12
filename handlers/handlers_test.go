@@ -226,6 +226,63 @@ func TestGetSeasonalSpecialEpisodes(t *testing.T) {
 	}
 }
 
+func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
+	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[
+  {
+    "name": "Example Show",
+    "provider": "Netflix",
+    "specialEpisodes": [
+      {"category": "halloween", "series": 2, "episode": 5},
+      {"category": "christmas", "series": 3, "episode": 4}
+    ]
+  }
+]`)
+
+	tests := []struct {
+		name string
+		call func() (data.ShowSpecialEpisode, error)
+		want data.ShowSpecialEpisode
+	}{
+		{
+			name: "Halloween",
+			call: GetRandomHalloweenEpisode,
+			want: data.ShowSpecialEpisode{
+				ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5,
+			},
+		},
+		{
+			name: "Christmas",
+			call: GetRandomChristmasEpisode,
+			want: data.ShowSpecialEpisode{
+				ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.call()
+			if err != nil {
+				t.Fatalf("random episode handler returned error: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("expected %+v, got %+v", tt.want, got)
+			}
+		})
+	}
+}
+
+func TestGetRandomSeasonalSpecialEpisodeReturnsErrorWhenEmpty(t *testing.T) {
+	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[]`)
+
+	_, err := GetRandomHalloweenEpisode()
+	if err == nil || !strings.Contains(err.Error(), "no halloween episodes found") {
+		t.Fatalf("expected empty Halloween result error, got %v", err)
+	}
+}
+
 func TestHandlersSurfaceReadErrors(t *testing.T) {
 	useTempDataDir(t)
 
@@ -286,6 +343,22 @@ func TestHandlersSurfaceReadErrors(t *testing.T) {
 			name: "GetChristmasEpisodes",
 			call: func() error {
 				_, err := GetChristmasEpisodes()
+				return err
+			},
+			wantError: "error reading shows",
+		},
+		{
+			name: "GetRandomHalloweenEpisode",
+			call: func() error {
+				_, err := GetRandomHalloweenEpisode()
+				return err
+			},
+			wantError: "error reading shows",
+		},
+		{
+			name: "GetRandomChristmasEpisode",
+			call: func() error {
+				_, err := GetRandomChristmasEpisode()
 				return err
 			},
 			wantError: "error reading shows",
