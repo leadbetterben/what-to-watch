@@ -18,8 +18,8 @@ Architecture and handler details:
 
 Top-level facts the agent should trust (no search needed unless instructions are wrong)
 
-- Go version: 1.25.4 (declared in `go.mod` and in the repo CI at `.github/workflows/go.yml`).
-- Build toolchain: use the Go toolchain (`go` CLI). Actions/CI uses `actions/setup-go@v4` with `go-version: '1.25.4'`.
+- Go version: 1.27.2 (declared in `go.mod` and in the repo CI at `.github/workflows/go.yml`).
+- Build toolchain: use the Go toolchain (`go` CLI). Actions/CI uses `actions/setup-go@v4` with `go-version: '1.27.2'`.
 - Test behavior: unit tests live under `shows/` and run fast. Tests do not rely on editing `db/currentShows.json` (they use in-memory structs).
 
 Build, run, and test (validated commands)
@@ -30,7 +30,7 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
    `go version`
 
-   Observed: `go version go1.25.4 windows/amd64` in my environment. Always target Go 1.25.4 to match CI.
+   Observed: `go1.27.2 version` reports `go version go1.27.2 windows/amd64` in my environment. Always target Go 1.27.2 to match CI.
 
 2) Build (compile all packages):
 
@@ -81,7 +81,7 @@ These sequences were run and validated in a Windows PowerShell environment in th
 
 Important environment/workflow notes
 
-- CI: `.github/workflows/go.yml` is the single GitHub Actions workflow. It runs on `push` and `pull_request` to `main` and uses Go 1.25.4. To avoid surprises, match that Go version locally or use the same action in a test run.
+- CI: `.github/workflows/go.yml` is the single GitHub Actions workflow. It runs on `push` and `pull_request` to `main` and uses Go 1.27.2. To avoid surprises, match that Go version locally or use the same action in a test run.
 - File I/O: `db.ReadCurrentShows()` and `db.ReadFilms()` look for their respective JSON files near the executable first, then fall back to the source `db` directory. This means:
   - Built binaries may expect `currentShows.json` and `films.json` to live next to the binary.
   - `go run .` and tests will find `db/currentShows.json` and `db/films.json` in the source tree.
@@ -105,12 +105,12 @@ Project layout (high-value paths and files to edit)
 
 Checks run before merge (what CI enforces)
 
-- GitHub Actions `Go` workflow: sets up Go 1.25.4, runs `go build -v ./...` and `go test -v ./...`. A PR should pass both build and tests on this workflow.
+- GitHub Actions `Go` workflow: sets up Go 1.27.2, runs `go build -v ./...` and `go test -race -v ./...`. A PR should pass both build and tests on this workflow.
 
 Quick validation guidance for the agent making changes
 
 - Always run locally before opening a PR: `go build ./...` then `go test ./...`.
-- Ensure your Go tool version matches CI (1.25.4). If you cannot install that version locally, run CI-oriented checks in a container or use `actions/setup-go` locally in a disposable runner.
+- Ensure your Go tool version matches CI (1.27.2). If you cannot install that version locally, run CI-oriented checks in a container or use `actions/setup-go` locally in a disposable runner.
 - If the change touches file I/O, double-check `db.getFullPath` semantics: built binaries and `go run` resolve files differently.
 - Unit and integration tests live in `shows/`, `db/`, `handlers/`, `cmd/cli/`, `cmd/http/`, and the main package. Read `shows/shows_test.go` for business logic tests, `cmd/http/http_test.go` for HTTP handler and route tests, and `handlers/handlers_test.go` for temp-fixture integration tests as models.
 
@@ -127,7 +127,7 @@ Trust this file first
 
 Short content snapshot (high-priority snippets)
 
-- `go.mod`: `go 1.25.4`
+- `go.mod`: `go 1.27.2`
 - `main.go`: dispatcher with CLI/HTTP routing. CLI: menu for shows/films. HTTP: endpoints for shows/films/mark/health.
 - `handlers/handlers.go`: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
 - `db/db.go`: `ReadCurrentShows()`, `WriteCurrentShows()`, `ReadFilms()` plus `getFullPath` (see above notes about exe vs source lookup).

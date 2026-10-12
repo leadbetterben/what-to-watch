@@ -6,7 +6,7 @@ Purpose
 
 Environment & Tooling
 
-- Go toolchain: `go 1.25.4` (use the version in `go.mod` and CI).
+- Go toolchain: `go 1.27.2` (use the version in `go.mod` and CI).
 - Shell used for commands in examples: Windows PowerShell (v5.1).
 
 Key files and intent
@@ -35,7 +35,7 @@ go run . -mode=http   # HTTP mode on default port 8080
 
 Agent Workflow Expectations
 
-- Use the repository's Go version (`go 1.25.4`) to avoid CI drift.
+- Use the repository's Go version (`go 1.27.2`) to avoid CI drift.
 - Run `go build ./...` and `go test ./...` locally before proposing changes.
 - Keep changes minimal and focused; do not refactor unrelated code.
 
@@ -64,7 +64,7 @@ Committing & PRs
 
 - Commit messages should be concise and descriptive.
 - Before opening a PR, ensure `go build ./...` and `go test ./...` pass.
-- CI runs `go build -v ./...` and `go test -v ./...` on Go 1.25.4; target the same locally.
+- CI runs `go build -v ./...` and `go test -race -v ./...` on Go 1.27.2; target the same locally.
 
 Handler Architecture
 
