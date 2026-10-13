@@ -52,7 +52,9 @@ Start an HTTP server to interact with the API:
 go run . -mode=http -port=8080
 ```
 
-The port can be customized with the `-port` flag (default: 8080).
+The server listens on `127.0.0.1` only, so it is reachable from this computer and not from other machines on the network. The port can be customized with the `-port` flag (default: 8080).
+
+HTTP mode is intended for local use. Remote deployment and access from web or app clients are not currently supported. The server applies a 5-second header read timeout, a 10-second read timeout, a 30-second write timeout, and a 60-second idle connection timeout.
 
 #### Available Endpoints
 
@@ -70,34 +72,34 @@ The port can be customized with the `-port` flag (default: 8080).
 
 ```bash
 # Check server health
-curl http://localhost:8080/health
+curl http://127.0.0.1:8080/health
 
 # Get currently watching shows
-curl http://localhost:8080/shows
+curl http://127.0.0.1:8080/shows
 
 # Get unwatched shows in Drama genre
-curl http://localhost:8080/shows?genre=drama
+curl http://127.0.0.1:8080/shows?genre=drama
 
 # Mark show #1 as watched
-curl -X POST http://localhost:8080/shows/watch?index=1
+curl -X POST http://127.0.0.1:8080/shows/watch?index=1
 
 # Get all films
-curl http://localhost:8080/films
+curl http://127.0.0.1:8080/films
 
 # Get available genres
-curl http://localhost:8080/genres
+curl http://127.0.0.1:8080/genres
 
 # Get curated Halloween episodes
-curl http://localhost:8080/specials/halloween
+curl http://127.0.0.1:8080/specials/halloween
 
 # Get curated Christmas episodes
-curl http://localhost:8080/specials/christmas
+curl http://127.0.0.1:8080/specials/christmas
 
 # Get one random Halloween episode
-curl http://localhost:8080/specials/halloween/random
+curl http://127.0.0.1:8080/specials/halloween/random
 
 # Get one random Christmas episode
-curl http://localhost:8080/specials/christmas/random
+curl http://127.0.0.1:8080/specials/christmas/random
 
 ```
 

@@ -3,15 +3,65 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"what-to-watch/data"
 )
+
+func TestNewServerUsesLoopbackAndTimeouts(t *testing.T) {
+	server := NewServer(8080)
+	config := server.httpServer
+
+	if config.Addr != "127.0.0.1:8080" {
+		t.Fatalf("expected loopback address 127.0.0.1:8080, got %q", config.Addr)
+	}
+	if config.ReadHeaderTimeout != 5*time.Second {
+		t.Errorf("expected ReadHeaderTimeout 5s, got %s", config.ReadHeaderTimeout)
+	}
+	if config.ReadTimeout != 10*time.Second {
+		t.Errorf("expected ReadTimeout 10s, got %s", config.ReadTimeout)
+	}
+	if config.WriteTimeout != 30*time.Second {
+		t.Errorf("expected WriteTimeout 30s, got %s", config.WriteTimeout)
+	}
+	if config.IdleTimeout != 60*time.Second {
+		t.Errorf("expected IdleTimeout 60s, got %s", config.IdleTimeout)
+	}
+}
+
+func TestNewServerWithHandlerUsesConfiguredPort(t *testing.T) {
+	server := NewServerWithHandler(9090, &mockHandler{})
+	if server.httpServer.Addr != "127.0.0.1:9090" {
+		t.Fatalf("expected loopback address 127.0.0.1:9090, got %q", server.httpServer.Addr)
+	}
+}
+
+func TestStartUsesInjectableHTTPServer(t *testing.T) {
+	server := NewServer(8080)
+	wantErr := errors.New("listen failed")
+	called := false
+	server.listenAndServe = func(got *http.Server) error {
+		called = true
+		if got != server.httpServer {
+			t.Fatal("Start passed a different server than the configured server")
+		}
+		return wantErr
+	}
+
+	if err := server.Start(); !errors.Is(err, wantErr) {
+		t.Fatalf("expected listen error %v, got %v", wantErr, err)
+	}
+	if !called {
+		t.Fatal("expected Start to invoke the injectable server starter")
+	}
+}
 
 // mockHandler implements the Handler interface for testing
 type mockHandler struct {

@@ -42,6 +42,6 @@ Keep HTTP mode safe and useful for local-only use: bind to loopback by default, 
 ## Likely files
 
 - `main.go` — startup configuration, if needed to pass through the loopback address.
-- `cmd/http/http.go` — server configuration, timeout values, lifecycle, and mutation protection.
+- `cmd/http/http.go` — loopback server configuration, timeout values, and lifecycle.
 - `cmd/http/http_test.go` — loopback configuration and timeout coverage.
 - `README.md` — HTTP bind and remote-access guidance.
