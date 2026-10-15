@@ -2,8 +2,10 @@ package http
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
+	"time"
 
 	"what-to-watch/data"
 	"what-to-watch/handlers"
@@ -63,31 +65,48 @@ func (h *defaultHandler) GetRandomChristmasEpisode() (data.ShowSpecialEpisode, e
 
 // Server holds the HTTP server instance
 type Server struct {
-	port    int
-	handler Handler
+	handler        Handler
+	httpServer     *http.Server
+	listenAndServe func(*http.Server) error
 }
+
+const (
+	readHeaderTimeout = 5 * time.Second
+	readTimeout       = 10 * time.Second
+	writeTimeout      = 30 * time.Second
+	idleTimeout       = 60 * time.Second
+)
 
 // NewServer creates a new HTTP server
 func NewServer(port int) *Server {
-	return &Server{
-		port:    port,
-		handler: &defaultHandler{},
-	}
+	return newServer(port, &defaultHandler{})
 }
 
 // NewServerWithHandler creates a new HTTP server with a custom handler (for testing)
 func NewServerWithHandler(port int, handler Handler) *Server {
-	return &Server{
-		port:    port,
-		handler: handler,
+	return newServer(port, handler)
+}
+
+func newServer(port int, handler Handler) *Server {
+	s := &Server{handler: handler}
+	s.httpServer = &http.Server{
+		Addr:              net.JoinHostPort("127.0.0.1", strconv.Itoa(port)),
+		Handler:           s.routes(),
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
+	s.listenAndServe = func(server *http.Server) error {
+		return server.ListenAndServe()
+	}
+	return s
 }
 
 // Start begins listening for HTTP requests
 func (s *Server) Start() error {
-	addr := fmt.Sprintf(":%d", s.port)
-	fmt.Printf("HTTP server listening on port %d\n", s.port)
-	return http.ListenAndServe(addr, s.routes())
+	fmt.Printf("HTTP server listening on %s\n", s.httpServer.Addr)
+	return s.listenAndServe(s.httpServer)
 }
 
 func (s *Server) routes() http.Handler {
