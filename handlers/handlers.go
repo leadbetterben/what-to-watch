@@ -27,21 +27,18 @@ func GetCurrentlyWatchingShows() ([]data.Show, error) {
 // MarkShowWatched marks an episode as watched and updates the data store
 // idx is 1-based index from the currently watching list
 func MarkShowWatched(idx int) (bool, error) {
-	s, err := db.ReadCurrentShows()
+	completed, err := db.UpdateCurrentShows(func(current []data.Show) ([]data.Show, bool, error) {
+		updatedShows, isCompleted, err := shows.MarkEpisodeWatched(current, idx)
+		if err != nil {
+			return nil, false, fmt.Errorf("error updating show: %w", err)
+		}
+		return updatedShows, isCompleted, nil
+	})
 	if err != nil {
-		return false, fmt.Errorf("error reading shows: %w", err)
+		return false, err
 	}
 
-	updatedShows, isCompleted, err := shows.MarkEpisodeWatched(s, idx)
-	if err != nil {
-		return false, fmt.Errorf("error updating show: %w", err)
-	}
-
-	if err := db.WriteCurrentShows(updatedShows); err != nil {
-		return false, fmt.Errorf("error saving updated shows: %w", err)
-	}
-
-	return isCompleted, nil
+	return completed, nil
 }
 
 // GetAllFilms retrieves the list of all films
