@@ -32,6 +32,11 @@ func readShows() ([]data.Show, error) {
 	if err := json.Unmarshal(raw, &shows); err != nil {
 		return nil, err
 	}
+	for _, show := range shows {
+		if err := data.ValidateSpecialEpisodes(show); err != nil {
+			return nil, err
+		}
+	}
 
 	return shows, nil
 }
