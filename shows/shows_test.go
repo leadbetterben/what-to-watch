@@ -299,14 +299,14 @@ func TestGetUnwatchedShowsByGenre(t *testing.T) {
 func TestGetSpecialEpisodes(t *testing.T) {
 	shows := []data.Show{
 		{
-			Name: "The Office", Provider: "Netflix",
+			Name: "The Office", Provider: "Netflix", Episodes: []int{4, 5, 4},
 			SpecialEpisodes: []data.SpecialEpisode{
 				{Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
 				{Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
 			},
 		},
 		{
-			Name: "The Office", Provider: "Prime",
+			Name: "The Office", Provider: "Prime", Episodes: []int{6},
 			SpecialEpisodes: []data.SpecialEpisode{
 				{Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
 			},

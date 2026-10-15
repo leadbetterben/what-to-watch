@@ -188,6 +188,7 @@ func TestGetSeasonalSpecialEpisodes(t *testing.T) {
   {
     "name": "Example Show",
     "provider": "Netflix",
+    "episodes": [4, 5, 4],
     "specialEpisodes": [
       {"category": "halloween", "series": 2, "episode": 5},
       {"category": "christmas", "series": 3, "episode": 4}
@@ -196,6 +197,7 @@ func TestGetSeasonalSpecialEpisodes(t *testing.T) {
   {
     "name": "Example Show",
     "provider": "Prime",
+    "episodes": [6],
     "specialEpisodes": [
       {"category": "halloween", "series": 1, "episode": 6}
     ]
@@ -232,6 +234,7 @@ func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
   {
     "name": "Example Show",
     "provider": "Netflix",
+    "episodes": [4, 5, 4],
     "specialEpisodes": [
       {"category": "halloween", "series": 2, "episode": 5},
       {"category": "christmas", "series": 3, "episode": 4}

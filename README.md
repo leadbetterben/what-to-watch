@@ -11,6 +11,9 @@ This program can be run as an interactive CLI or as an HTTP server, both using t
 Show data is stored in `db/shows.json` as one array. Shows with
 `currentSeries`/`currentEpisode` are currently watching; shows with
 `rewatch: true` are queued for rewatch; records with neither are unwatched.
+Seasonal entries in `specialEpisodes` use a supported `halloween` or `christmas`
+category with positive series and episode numbers. When `episodes` counts are
+available, the seasonal position must fit within those bounds.
 
 The `plans/` directory contains AI-generated plans for implementations.
 
