@@ -17,10 +17,11 @@ This plan covers the current-position and episode-count portion of #29. Seasonal
 
 ## Files to change
 
-- `shows/shows.go` — add or share current-position validation and use it when listing and updating shows.
+- `data/data.go` — define the shared current-position invariant and actionable field errors.
+- `shows/shows.go` — apply current-position validation when listing and updating shows.
 - `shows/shows_test.go` — cover valid boundaries, partial positions, non-positive values, and out-of-range positions/counts.
 - `handlers/handlers.go` — inspect the current read/list/update paths and propagate contextual validation errors where needed.
-- `db/db.go` — inspect readers and determine where malformed persisted positions should be detected so callers cannot disagree about whether a show is current.
+- `db/db.go` — reject malformed persisted current positions in the common reader so callers cannot disagree about whether a show is current.
 - `cmd/cli/cli.go` and `cmd/http/http.go` — update only if needed to preserve and expose actionable errors through existing interfaces.
 - `README.md` — document the current-position rule if it changes user-visible data expectations.
 
