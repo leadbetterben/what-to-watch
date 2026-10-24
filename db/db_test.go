@@ -3,6 +3,7 @@ package db
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -10,170 +11,129 @@ import (
 )
 
 func TestReadShows(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "The Expanse",
-    "genre": "Sci-Fi",
-    "episodes": [10, 13],
-    "provider": "Prime",
-    "specialEpisodes": [
-      {"category": "halloween", "series": 1, "episode": 1},
-      {"category": "christmas", "series": 2, "episode": 13}
-    ],
-    "currentSeries": 1,
-    "currentEpisode": 2
-  }
-]`)
-
-	shows, err := ReadShows()
-	if err != nil {
-		t.Fatalf("ReadAllShows returned error: %v", err)
-	}
-
-	if len(shows) != 1 {
-		t.Fatalf("expected 1 show, got %d", len(shows))
-	}
-	if shows[0].Name != "The Expanse" || shows[0].Genre != "Sci-Fi" || shows[0].Provider != "Prime" {
-		t.Fatalf("unexpected show: %+v", shows[0])
-	}
-	if shows[0].CurrentSeries == nil || *shows[0].CurrentSeries != 1 {
-		t.Fatalf("expected current series 1, got %+v", shows[0].CurrentSeries)
-	}
-	if shows[0].CurrentEpisode == nil || *shows[0].CurrentEpisode != 2 {
-		t.Fatalf("expected current episode 2, got %+v", shows[0].CurrentEpisode)
-	}
-	if len(shows[0].SpecialEpisodes) != 2 || shows[0].SpecialEpisodes[0].Episode != 1 || shows[0].SpecialEpisodes[1].Episode != 13 {
-		t.Fatalf("expected seasonal metadata at valid episode boundaries, got %+v", shows[0].SpecialEpisodes)
-	}
-}
-
-func TestReadShowsRejectsInvalidSeasonalMetadata(t *testing.T) {
 	tests := []struct {
-		name  string
-		entry string
-		field string
+		name    string
+		fixture string
+		want    []data.Show
+		wantErr []string
 	}{
-		{name: "unsupported category", entry: `{"category":"thanksgiving","series":1,"episode":1}`, field: ".category"},
-		{name: "zero series", entry: `{"category":"halloween","series":0,"episode":1}`, field: ".series"},
-		{name: "negative series", entry: `{"category":"halloween","series":-1,"episode":1}`, field: ".series"},
-		{name: "zero episode", entry: `{"category":"christmas","series":1,"episode":0}`, field: ".episode"},
-		{name: "negative episode", entry: `{"category":"christmas","series":1,"episode":-1}`, field: ".episode"},
-		{name: "series above bounds", entry: `{"category":"halloween","series":3,"episode":1}`, field: ".series"},
-		{name: "episode above bounds", entry: `{"category":"christmas","series":2,"episode":14}`, field: ".episode"},
+		{
+			name:    "success",
+			fixture: `[{"name":"The Expanse","genre":"Sci-Fi","episodes":[10,13],"provider":"Prime","specialEpisodes":[{"category":"halloween","series":1,"episode":1},{"category":"christmas","series":2,"episode":13}],"currentSeries":1,"currentEpisode":2}]`,
+			want: []data.Show{{
+				Name: "The Expanse", Genre: "Sci-Fi", Episodes: []int{10, 13}, Provider: "Prime",
+				SpecialEpisodes: []data.SpecialEpisode{{Category: data.SpecialCategoryHalloween, Series: 1, Episode: 1}, {Category: data.SpecialCategoryChristmas, Series: 2, Episode: 13}},
+				CurrentSeries:   intPointer(1), CurrentEpisode: intPointer(2),
+			}},
+		},
+		{name: "missing file", wantErr: []string{"shows.json"}},
+		{name: "invalid JSON", fixture: `{bad json`, wantErr: []string{"invalid character"}},
+		{name: "unsupported seasonal category", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"thanksgiving","series":1,"episode":1}]}]`, wantErr: []string{"Example", ".category"}},
+		{name: "zero seasonal series", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"halloween","series":0,"episode":1}]}]`, wantErr: []string{"Example", ".series"}},
+		{name: "negative seasonal series", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"halloween","series":-1,"episode":1}]}]`, wantErr: []string{"Example", ".series"}},
+		{name: "zero seasonal episode", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"christmas","series":1,"episode":0}]}]`, wantErr: []string{"Example", ".episode"}},
+		{name: "negative seasonal episode", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"christmas","series":1,"episode":-1}]}]`, wantErr: []string{"Example", ".episode"}},
+		{name: "seasonal series above bounds", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"halloween","series":3,"episode":1}]}]`, wantErr: []string{"Example", ".series"}},
+		{name: "seasonal episode above bounds", fixture: `[{"name":"Example","episodes":[10,13],"specialEpisodes":[{"category":"christmas","series":2,"episode":14}]}]`, wantErr: []string{"Example", ".episode"}},
+		{name: "partial current position", fixture: `[{"name":"Partial","episodes":[2],"currentSeries":1}]`, wantErr: []string{"Partial", "both currentSeries and currentEpisode"}},
+		{name: "current series outside bounds", fixture: `[{"name":"Bad Series","episodes":[2],"currentSeries":2,"currentEpisode":1}]`, wantErr: []string{"Bad Series", "currentSeries", "outside episodes bounds"}},
+		{name: "current episode outside bounds", fixture: `[{"name":"Bad Episode","episodes":[2],"currentSeries":1,"currentEpisode":3}]`, wantErr: []string{"Bad Episode", "currentEpisode", "outside series"}},
+		{name: "non-positive episode count", fixture: `[{"name":"Bad Count","episodes":[0],"currentSeries":1,"currentEpisode":1}]`, wantErr: []string{"Bad Count", "invalid episodes[1] count 0"}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := useTempDataDir(t)
-			fixture := `[{"name":"Example","episodes":[10,13],"specialEpisodes":[` + tt.entry + `]}]`
-			writeFixture(t, dir, "shows.json", fixture)
-			if _, err := ReadShows(); err == nil || !strings.Contains(err.Error(), "Example") || !strings.Contains(err.Error(), tt.field) {
-				t.Fatalf("expected contextual validation error for %s, got %v", tt.name, err)
+			if tt.fixture != "" {
+				writeFixture(t, dir, "shows.json", tt.fixture)
 			}
-			raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
+			shows, err := ReadShows()
+			if len(tt.wantErr) > 0 {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				for _, fragment := range tt.wantErr {
+					if !strings.Contains(err.Error(), fragment) {
+						t.Fatalf("expected error containing %q, got %q", fragment, err.Error())
+					}
+				}
+				raw, readErr := os.ReadFile(filepath.Join(dir, "shows.json"))
+				if readErr == nil && string(raw) != tt.fixture {
+					t.Fatalf("validation changed source data: got %s", raw)
+				}
+				return
+			}
 			if err != nil {
-				t.Fatalf("reading fixture after validation: %v", err)
+				t.Fatalf("ReadShows returned error: %v", err)
 			}
-			if string(raw) != fixture {
-				t.Fatalf("validation changed source data: got %s", raw)
+			if len(shows) != len(tt.want) {
+				t.Fatalf("expected %d shows, got %d", len(tt.want), len(shows))
 			}
-		})
-	}
-}
-
-func TestReadShowsRejectsInvalidCurrentPositions(t *testing.T) {
-	tests := []struct {
-		name string
-		json string
-	}{
-		{name: "partial position", json: `[{"name":"Partial","episodes":[2],"currentSeries":1}]`},
-		{name: "series outside bounds", json: `[{"name":"Bad Series","episodes":[2],"currentSeries":2,"currentEpisode":1}]`},
-		{name: "episode outside bounds", json: `[{"name":"Bad Episode","episodes":[2],"currentSeries":1,"currentEpisode":3}]`},
-		{name: "non-positive episode count", json: `[{"name":"Bad Count","episodes":[0],"currentSeries":1,"currentEpisode":1}]`},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			writeFixture(t, dir, "shows.json", tt.json)
-			if _, err := ReadShows(); err == nil {
-				t.Fatalf("expected validation error for %s", tt.name)
+			for i, want := range tt.want {
+				if !reflect.DeepEqual(shows[i], want) {
+					t.Fatalf("unexpected show at index %d: %+v", i, shows[i])
+				}
 			}
 		})
 	}
 }
 
 func TestReadFilms(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "films.json", `[
-  {
-    "name": "Arrival",
-    "genre": "Sci-Fi",
-    "provider": "Netflix"
-  }
-]`)
-
-	films, err := ReadFilms()
-	if err != nil {
-		t.Fatalf("ReadFilms returned error: %v", err)
-	}
-
-	if len(films) != 1 {
-		t.Fatalf("expected 1 film, got %d", len(films))
-	}
-	if films[0] != (data.Film{Name: "Arrival", Genre: "Sci-Fi", Provider: "Netflix"}) {
-		t.Fatalf("unexpected film: %+v", films[0])
-	}
-}
-
-func TestReadersReturnErrorForMissingFiles(t *testing.T) {
-	useTempDataDir(t)
-
 	tests := []struct {
-		name string
-		read func() error
+		name    string
+		fixture string
+		want    []data.Film
+		wantErr []string
 	}{
-		{name: "ReadShows", read: func() error { _, err := ReadShows(); return err }},
-		{name: "ReadFilms", read: func() error { _, err := ReadFilms(); return err }},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.read(); err == nil {
-				t.Fatalf("expected error for missing file")
-			}
-		})
-	}
-}
-
-func TestReadersReturnErrorForInvalidJSON(t *testing.T) {
-	tests := []struct {
-		name     string
-		fileName string
-		read     func() error
-	}{
-		{name: "ReadShows", fileName: "shows.json", read: func() error { _, err := ReadShows(); return err }},
-		{name: "ReadFilms", fileName: "films.json", read: func() error { _, err := ReadFilms(); return err }},
+		{
+			name:    "success",
+			fixture: `[{"name":"Arrival","genre":"Sci-Fi","provider":"Netflix"}]`,
+			want:    []data.Film{{Name: "Arrival", Genre: "Sci-Fi", Provider: "Netflix"}},
+		},
+		{
+			name:    "missing file",
+			fixture: "",
+			want:    nil,
+			wantErr: []string{"ReadFilms: error reading file: readFile: error reading file films.json: open", "films.json: The system cannot find the file specified."},
+		},
+		{
+			name:    "invalid JSON",
+			fixture: `{"bad json"`,
+			want:    nil,
+			wantErr: []string{"ReadFilms: error unmarshalling JSON: unexpected end of JSON input"},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := useTempDataDir(t)
-			writeFixture(t, dir, tt.fileName, `{bad json`)
-
-			if err := tt.read(); err == nil {
-				t.Fatalf("expected error for invalid JSON")
+			if tt.fixture != "" {
+				writeFixture(t, dir, "films.json", tt.fixture)
+			}
+			films, err := ReadFilms()
+			if len(tt.wantErr) > 0 {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				for _, fragment := range tt.wantErr {
+					if !strings.Contains(err.Error(), fragment) {
+						t.Fatalf("expected error containing %q, got %q", fragment, err.Error())
+					}
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ReadFilms returned error: %v", err)
+			}
+			if len(films) != len(tt.want) {
+				t.Fatalf("expected %d films, got %d", len(tt.want), len(films))
+			}
+			for i, want := range tt.want {
+				if films[i] != want {
+					t.Fatalf("unexpected film at index %d: %+v", i, films[i])
+				}
 			}
 		})
-	}
-}
-
-func TestReadFileReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
-	t.Cleanup(setFullPathResolverForTest(func(string) string { return "" }))
-
-	if _, err := readFile("shows.json"); err == nil {
-		t.Fatalf("expected error when path cannot be resolved")
 	}
 }
 
@@ -181,21 +141,16 @@ func useTempDataDir(t *testing.T) string {
 	t.Helper()
 
 	dir := t.TempDir()
-	t.Cleanup(setFullPathResolverForTest(func(path string) string {
+
+	originalResolver := fullPathResolver
+	fullPathResolver = func(path string) string {
 		return filepath.Join(dir, path)
-	}))
+	}
+	t.Cleanup(func() {
+		fullPathResolver = originalResolver
+	})
 
 	return dir
-}
-
-// setFullPathResolverForTest replaces the data file path resolver and returns
-// a restore function. It is intended for tests that need isolated fixture files.
-func setFullPathResolverForTest(resolver func(string) string) func() {
-	originalResolver := fullPathResolver
-	fullPathResolver = resolver
-	return func() {
-		fullPathResolver = originalResolver
-	}
 }
 
 func writeFixture(t *testing.T, dir, name, content string) {
@@ -204,4 +159,8 @@ func writeFixture(t *testing.T, dir, name, content string) {
 	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0644); err != nil {
 		t.Fatalf("writing fixture %s: %v", name, err)
 	}
+}
+
+func intPointer(value int) *int {
+	return &value
 }

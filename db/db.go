@@ -20,7 +20,7 @@ var showsWriteMu sync.Mutex
 func ReadShows() ([]data.Show, error) {
 	raw, err := readFile("shows.json")
 	if err != nil {
-		return nil, fmt.Errorf("readShows: error reading file \n err=%w", err)
+		return nil, fmt.Errorf("readShows: error reading file: %w", err)
 	}
 
 	var shows []data.Show
@@ -46,12 +46,12 @@ func ReadShows() ([]data.Show, error) {
 func ReadFilms() ([]data.Film, error) {
 	raw, err := readFile("films.json")
 	if err != nil {
-		return nil, fmt.Errorf("ReadFilms: error reading file \n err=%w", err)
+		return nil, fmt.Errorf("ReadFilms: error reading file: %w", err)
 	}
 
 	var films []data.Film
 	if err := json.Unmarshal(raw, &films); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ReadFilms: error unmarshalling JSON: %w", err)
 	}
 
 	return films, nil
@@ -113,7 +113,7 @@ func writeShows(shows []data.Show) error {
 	dir := filepath.Dir(fullPath)
 	tmpFile, err := os.CreateTemp(dir, "shows-*.json.tmp")
 	if err != nil {
-		return fmt.Errorf("error creating temp file \n err=%w fullPath=%s", err, fullPath)
+		return fmt.Errorf("error creating temp file at %s: %w", fullPath, err)
 	}
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath)
@@ -121,15 +121,15 @@ func writeShows(shows []data.Show) error {
 	// write to temp file
 	if _, err := tmpFile.Write(raw); err != nil {
 		tmpFile.Close()
-		return fmt.Errorf("error writing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("error writing to temp file at %s: %w", tmpPath, err)
 	}
 	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("error closing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("error closing temp file at %s: %w", tmpPath, err)
 	}
 
 	// rename temp file to final file
 	if err := os.Rename(tmpPath, fullPath); err != nil {
-		return fmt.Errorf("error renaming temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("error renaming temp file at %s to %s: %w", tmpPath, fullPath, err)
 	}
 
 	return nil
@@ -166,7 +166,7 @@ func readFile(path string) ([]byte, error) {
 
 	raw, err := os.ReadFile(fullPath)
 	if err != nil {
-		return nil, fmt.Errorf("readFile: error reading file \n err=%w path=%s fullPath=%s", err, path, fullPath)
+		return nil, fmt.Errorf("readFile: error reading file %s: %w", path, err)
 	}
 
 	return raw, nil
