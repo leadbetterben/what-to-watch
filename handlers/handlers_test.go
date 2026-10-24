@@ -106,66 +106,113 @@ func TestGetCurrentlyWatchingShows(t *testing.T) {
 	}
 }
 
-func TestMarkShowWatchedIncrementsAndPersistsEpisode(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "Severance",
-    "genre": "Sci-Fi",
-    "episodes": [9],
-    "provider": "Apple TV+",
-    "currentSeries": 1,
-    "currentEpisode": 3
-  }
-]`)
+func TestMarkShowWatched(t *testing.T) {
+	tests := []struct {
+		name          string
+		shows         []data.Show
+		index         int
+		wantShows     []data.Show
+		wantCompleted bool
+		wantError     bool
+	}{
+		{
+			name:      "increment episode within series",
+			shows:     []data.Show{{Name: "Show A", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}},
+			index:     1,
+			wantShows: []data.Show{{Name: "Show A", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}},
+		},
+		{
+			name:      "rollover to next series",
+			shows:     []data.Show{{Name: "Show B", Episodes: []int{2, 3}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}},
+			index:     1,
+			wantShows: []data.Show{{Name: "Show B", Episodes: []int{2, 3}, CurrentSeries: intPtr(2), CurrentEpisode: intPtr(1)}},
+		},
+		{
+			name:          "finish show when past last series",
+			shows:         []data.Show{{Name: "Show C", Episodes: []int{1, 1}, CurrentSeries: intPtr(2), CurrentEpisode: intPtr(1)}},
+			index:         1,
+			wantShows:     []data.Show{{Name: "Show C", Episodes: []int{1, 1}}},
+			wantCompleted: true,
+		},
+		{
+			name:      "invalid non-positive index",
+			shows:     []data.Show{},
+			index:     0,
+			wantShows: []data.Show{},
+			wantError: true,
+		},
+		{
+			name:      "index out of range",
+			shows:     []data.Show{{Name: "Show D", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}},
+			index:     2,
+			wantError: true,
+		},
+		{
+			name:      "selected show not marked as watching",
+			shows:     []data.Show{{Name: "Show E", Episodes: []int{3}}},
+			index:     1,
+			wantError: true,
+		},
+		{
+			name:      "selected show not marked as watching for series only",
+			shows:     []data.Show{{Name: "Show E", Episodes: []int{3}, CurrentEpisode: intPtr(1)}},
+			index:     1,
+			wantError: true,
+		},
+		{
+			name:      "selected show not marked as watching for episode only",
+			shows:     []data.Show{{Name: "Show E", Episodes: []int{3}, CurrentSeries: intPtr(1)}},
+			index:     1,
+			wantError: true,
+		},
+		{
+			name:      "invalid position does not complete show",
+			shows:     []data.Show{{Name: "Bad Series", Episodes: []int{3}, CurrentSeries: intPtr(2), CurrentEpisode: intPtr(1)}},
+			index:     1,
+			wantError: true,
+		},
+		{
+			name:      "non-positive episode count does not complete show",
+			shows:     []data.Show{{Name: "Bad Count", Episodes: []int{0}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}},
+			index:     1,
+			wantError: true,
+		},
+		{
+			name:      "negative episode count does not complete show",
+			shows:     []data.Show{{Name: "Bad Count", Episodes: []int{-1}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}},
+			index:     1,
+			wantError: true,
+		},
+	}
 
-	completed, err := MarkShowWatched(1)
-	if err != nil {
-		t.Fatalf("MarkShowWatched returned error: %v", err)
-	}
-	if completed {
-		t.Fatalf("expected show not to be completed")
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture, err := json.Marshal(tt.shows)
+			if err != nil {
+				t.Fatalf("marshal shows fixture: %v", err)
+			}
+			writeFixture(t, dir, "shows.json", string(fixture))
 
-	shows := readCurrentShowsFixture(t, dir)
-	if len(shows) != 1 {
-		t.Fatalf("expected 1 persisted show, got %d", len(shows))
-	}
-	if shows[0].CurrentEpisode == nil || *shows[0].CurrentEpisode != 4 {
-		t.Fatalf("expected persisted episode 4, got %+v", shows[0])
-	}
-	if shows[0].CurrentSeries == nil || *shows[0].CurrentSeries != 1 {
-		t.Fatalf("expected persisted series 1, got %+v", shows[0])
-	}
-}
+			completed, err := MarkShowWatched(tt.index)
+			if tt.wantError {
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("MarkShowWatched returned error: %v", err)
+			}
+			if completed != tt.wantCompleted {
+				t.Fatalf("expected completed=%v, got %v", tt.wantCompleted, completed)
+			}
 
-func TestMarkShowWatchedCompletesAndPersistsShow(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "One Episode Show",
-    "genre": "Drama",
-    "episodes": [1],
-    "provider": "BBC",
-    "currentSeries": 1,
-    "currentEpisode": 1
-  }
-]`)
-
-	completed, err := MarkShowWatched(1)
-	if err != nil {
-		t.Fatalf("MarkShowWatched returned error: %v", err)
-	}
-	if !completed {
-		t.Fatalf("expected show to be completed")
-	}
-
-	shows := readCurrentShowsFixture(t, dir)
-	if len(shows) != 1 {
-		t.Fatalf("expected 1 persisted show, got %d", len(shows))
-	}
-	if shows[0].CurrentSeries != nil || shows[0].CurrentEpisode != nil {
-		t.Fatalf("expected persisted show to clear current position, got %+v", shows[0])
+			gotShows := readCurrentShowsFixture(t, dir)
+			if !reflect.DeepEqual(gotShows, tt.wantShows) {
+				t.Fatalf("expected persisted shows %+v, got %+v", tt.wantShows, gotShows)
+			}
+		})
 	}
 }
 

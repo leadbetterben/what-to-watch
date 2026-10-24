@@ -7,7 +7,6 @@ import (
 
 	"what-to-watch/data"
 	"what-to-watch/db"
-	"what-to-watch/shows"
 )
 
 // GetCurrentlyWatchingShows retrieves the list of currently watching shows
@@ -47,12 +46,49 @@ func GetCurrentlyWatchingShows() ([]data.Show, error) {
 // MarkShowWatched marks an episode as watched and updates the data store
 // idx is 1-based index from the currently watching list
 func MarkShowWatched(idx int) (bool, error) {
-	completed, err := db.UpdateCurrentShows(func(current []data.Show) ([]data.Show, bool, error) {
-		updatedShows, isCompleted, err := shows.MarkEpisodeWatched(current, idx)
-		if err != nil {
-			return nil, false, fmt.Errorf("error updating show: %w", err)
+	completed, err := db.UpdateCurrentShows(func(shows []data.Show) ([]data.Show, bool, error) {
+		if idx <= 0 {
+			return nil, false, fmt.Errorf("invalid index: %d", idx)
 		}
-		return updatedShows, isCompleted, nil
+
+		if idx > len(shows) {
+			return nil, false, fmt.Errorf("index out of range")
+		}
+
+		s := &shows[idx-1]
+
+		if err := data.ValidateCurrentPosition(*s); err != nil {
+			return nil, false, err
+		}
+		if s.CurrentSeries == nil && s.CurrentEpisode == nil {
+			return nil, false, fmt.Errorf("selected show is not currently being watched")
+		}
+
+		curSeries := *s.CurrentSeries
+		curEpisode := *s.CurrentEpisode
+
+		// Determine episodes in current series. `Episodes` slice holds episode counts per series.
+		episodesInSeries := s.Episodes[curSeries-1]
+
+		// increment episode
+		curEpisode++
+
+		if curEpisode > episodesInSeries {
+			// rollover to next series
+			curEpisode = 1
+			curSeries++
+			if curSeries > len(s.Episodes) {
+				// finished the show
+				s.CurrentSeries = nil
+				s.CurrentEpisode = nil
+				return shows, true, nil
+			}
+		}
+
+		// set updated values
+		s.CurrentSeries = &curSeries
+		s.CurrentEpisode = &curEpisode
+		return shows, false, nil
 	})
 	if err != nil {
 		return false, err
