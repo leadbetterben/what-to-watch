@@ -3,100 +3,86 @@ package main
 import (
 	"bytes"
 	"errors"
-	"strings"
 	"testing"
 )
 
-func TestRunCLIMode(t *testing.T) {
-	restore := stubMainFunctions()
-	t.Cleanup(restore)
-
-	called := false
-	runCLI = func() {
-		called = true
+func TestRun(t *testing.T) {
+	tests := []struct {
+		name            string
+		mode            string
+		httpResponse    error
+		expectExitCode  int
+		expectRunCalled bool
+		expectPort      int
+		expectErr       string
+	}{
+		{
+			name:            "CLI mode",
+			mode:            "cli",
+			expectExitCode:  0,
+			expectRunCalled: true,
+			expectErr:       "",
+		},
+		{
+			name:            "HTTP mode",
+			mode:            "http",
+			expectExitCode:  0,
+			expectRunCalled: false,
+			expectPort:      9090,
+			expectErr:       "",
+		},
+		{
+			name:            "HTTP mode with error",
+			mode:            "http",
+			httpResponse:    errors.New("listen failed"),
+			expectExitCode:  1,
+			expectRunCalled: false,
+			expectPort:      9090,
+			expectErr:       "HTTP server error: listen failed\n",
+		},
+		{
+			name:            "Invalid mode",
+			mode:            "invalid",
+			expectExitCode:  1,
+			expectRunCalled: false,
+			expectErr:       "Invalid mode: invalid. Use 'cli' or 'http'.\n",
+		},
 	}
 
-	var stderr bytes.Buffer
-	exitCode := run("cli", 8080, &stderr)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originalRunCLI := runCLI
+			originalStartHTTPServer := startHTTPServer
+			defer func() {
+				runCLI = originalRunCLI
+				startHTTPServer = originalStartHTTPServer
+			}()
 
-	if exitCode != 0 {
-		t.Fatalf("expected exit code 0, got %d", exitCode)
-	}
-	if !called {
-		t.Fatalf("expected CLI runner to be called")
-	}
-	if stderr.Len() != 0 {
-		t.Fatalf("expected no stderr output, got %q", stderr.String())
-	}
-}
+			runCalled := false
+			runCLI = func() {
+				runCalled = true
+			}
+			var gotPort int
+			startHTTPServer = func(port int) error {
+				gotPort = port
+				return tt.httpResponse
+			}
 
-func TestRunHTTPMode(t *testing.T) {
-	restore := stubMainFunctions()
-	t.Cleanup(restore)
+			var stderr bytes.Buffer
+			exitCode := run(tt.mode, 9090, &stderr)
 
-	var gotPort int
-	startHTTPServer = func(port int) error {
-		gotPort = port
-		return nil
-	}
-
-	var stderr bytes.Buffer
-	exitCode := run("http", 9090, &stderr)
-
-	if exitCode != 0 {
-		t.Fatalf("expected exit code 0, got %d", exitCode)
-	}
-	if gotPort != 9090 {
-		t.Fatalf("expected HTTP server port 9090, got %d", gotPort)
-	}
-	if stderr.Len() != 0 {
-		t.Fatalf("expected no stderr output, got %q", stderr.String())
-	}
-}
-
-func TestRunHTTPModeReturnsError(t *testing.T) {
-	restore := stubMainFunctions()
-	t.Cleanup(restore)
-
-	startHTTPServer = func(int) error {
-		return errors.New("listen failed")
-	}
-
-	var stderr bytes.Buffer
-	exitCode := run("http", 8080, &stderr)
-
-	if exitCode != 1 {
-		t.Fatalf("expected exit code 1, got %d", exitCode)
-	}
-	if !strings.Contains(stderr.String(), "HTTP server error: listen failed") {
-		t.Fatalf("expected HTTP error message, got %q", stderr.String())
-	}
-}
-
-func TestRunInvalidMode(t *testing.T) {
-	restore := stubMainFunctions()
-	t.Cleanup(restore)
-
-	var stderr bytes.Buffer
-	exitCode := run("bogus", 8080, &stderr)
-
-	if exitCode != 1 {
-		t.Fatalf("expected exit code 1, got %d", exitCode)
-	}
-	if !strings.Contains(stderr.String(), "Invalid mode: bogus. Use 'cli' or 'http'.") {
-		t.Fatalf("expected invalid mode message, got %q", stderr.String())
-	}
-}
-
-func stubMainFunctions() func() {
-	originalRunCLI := runCLI
-	originalStartHTTPServer := startHTTPServer
-
-	runCLI = func() {}
-	startHTTPServer = func(int) error { return nil }
-
-	return func() {
-		runCLI = originalRunCLI
-		startHTTPServer = originalStartHTTPServer
+			if exitCode != tt.expectExitCode {
+				t.Fatalf("expected exit code %d, got %d", tt.expectExitCode, exitCode)
+			}
+			if runCalled != tt.expectRunCalled {
+				t.Fatalf("expected runCLI called: %v, got %v", tt.expectRunCalled, runCalled)
+			}
+			if gotPort != tt.expectPort {
+				t.Fatalf("expected HTTP server port %d, got %d", tt.expectPort, gotPort)
+			}
+			if stderr.String() != tt.expectErr {
+				t.Fatalf("expected stderr to be %q, got %q", tt.expectErr, stderr.String())
+			}
+		})
 	}
 }

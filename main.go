@@ -19,7 +19,6 @@ var (
 )
 
 func main() {
-	// Define command-line flags
 	mode := flag.String("mode", "cli", "Run mode: 'cli' for interactive CLI or 'http' for HTTP server")
 	port := flag.Int("port", 8080, "HTTP server port (only used in http mode)")
 	flag.Parse()
