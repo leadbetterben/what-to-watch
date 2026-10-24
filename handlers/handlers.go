@@ -18,9 +18,6 @@ func GetCurrentlyWatchingShows() ([]data.Show, error) {
 
 	var watching []data.Show
 	for _, s := range shows {
-		if err := data.ValidateCurrentPosition(s); err != nil {
-			return nil, fmt.Errorf("error validating shows: %w", err)
-		}
 		if s.CurrentSeries == nil && s.CurrentEpisode == nil {
 			continue
 		}
@@ -43,7 +40,7 @@ func GetCurrentlyWatchingShows() ([]data.Show, error) {
 	return watching, nil
 }
 
-// MarkShowWatched marks an episode as watched and updates the data store
+// MarkShowWatched marks an episode as watched and updates the data store.
 // idx is 1-based index from the currently watching list
 func MarkShowWatched(idx int) (bool, error) {
 	completed, err := db.UpdateCurrentShows(func(shows []data.Show) ([]data.Show, bool, error) {
