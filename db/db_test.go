@@ -18,6 +18,10 @@ func TestReadAllShows(t *testing.T) {
     "genre": "Sci-Fi",
     "episodes": [10, 13],
     "provider": "Prime",
+    "specialEpisodes": [
+      {"category": "halloween", "series": 1, "episode": 1},
+      {"category": "christmas", "series": 2, "episode": 13}
+    ],
     "currentSeries": 1,
     "currentEpisode": 2
   }
@@ -39,6 +43,43 @@ func TestReadAllShows(t *testing.T) {
 	}
 	if shows[0].CurrentEpisode == nil || *shows[0].CurrentEpisode != 2 {
 		t.Fatalf("expected current episode 2, got %+v", shows[0].CurrentEpisode)
+	}
+	if len(shows[0].SpecialEpisodes) != 2 || shows[0].SpecialEpisodes[0].Episode != 1 || shows[0].SpecialEpisodes[1].Episode != 13 {
+		t.Fatalf("expected seasonal metadata at valid episode boundaries, got %+v", shows[0].SpecialEpisodes)
+	}
+}
+
+func TestReadAllShowsRejectsInvalidSeasonalMetadata(t *testing.T) {
+	tests := []struct {
+		name  string
+		entry string
+		field string
+	}{
+		{name: "unsupported category", entry: `{"category":"thanksgiving","series":1,"episode":1}`, field: ".category"},
+		{name: "zero series", entry: `{"category":"halloween","series":0,"episode":1}`, field: ".series"},
+		{name: "negative series", entry: `{"category":"halloween","series":-1,"episode":1}`, field: ".series"},
+		{name: "zero episode", entry: `{"category":"christmas","series":1,"episode":0}`, field: ".episode"},
+		{name: "negative episode", entry: `{"category":"christmas","series":1,"episode":-1}`, field: ".episode"},
+		{name: "series above bounds", entry: `{"category":"halloween","series":3,"episode":1}`, field: ".series"},
+		{name: "episode above bounds", entry: `{"category":"christmas","series":2,"episode":14}`, field: ".episode"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture := `[{"name":"Example","episodes":[10,13],"specialEpisodes":[` + tt.entry + `]}]`
+			writeFixture(t, dir, "shows.json", fixture)
+			if _, err := ReadAllShows(); err == nil || !strings.Contains(err.Error(), "Example") || !strings.Contains(err.Error(), tt.field) {
+				t.Fatalf("expected contextual validation error for %s, got %v", tt.name, err)
+			}
+			raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
+			if err != nil {
+				t.Fatalf("reading fixture after validation: %v", err)
+			}
+			if string(raw) != fixture {
+				t.Fatalf("validation changed source data: got %s", raw)
+			}
+		})
 	}
 }
 

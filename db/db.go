@@ -38,6 +38,9 @@ func readShows() ([]data.Show, error) {
 		return nil, err
 	}
 	for _, show := range shows {
+		if err := data.ValidateSpecialEpisodes(show); err != nil {
+			return nil, err
+		}
 		if err := data.ValidateCurrentPosition(show); err != nil {
 			return nil, err
 		}
