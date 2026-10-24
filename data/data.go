@@ -32,7 +32,7 @@ type Show struct {
 	Episodes        []int            `json:"episodes"`
 	Provider        string           `json:"provider"`
 	SpecialEpisodes []SpecialEpisode `json:"specialEpisodes,omitempty"`
-	// Rewatch is true when the show is queued for watching again.
+	// Rewatch is true when the show is available for watching again.
 	Rewatch bool `json:"rewatch,omitempty"`
 	// CurrentSeries is only set if the user is currently watching this show
 	CurrentSeries *int   `json:"currentSeries,omitempty"`
@@ -52,15 +52,18 @@ func ValidateSpecialEpisodes(show Show) error {
 		default:
 			return fmt.Errorf("show %q has invalid %s.category %q", show.Name, field, special.Category)
 		}
+
 		if special.Series <= 0 {
 			return fmt.Errorf("show %q has invalid %s.series %d: must be positive", show.Name, field, special.Series)
 		}
 		if special.Episode <= 0 {
 			return fmt.Errorf("show %q has invalid %s.episode %d: must be positive", show.Name, field, special.Episode)
 		}
+
 		if len(show.Episodes) == 0 {
 			continue
 		}
+
 		if special.Series > len(show.Episodes) {
 			return fmt.Errorf("show %q has %s.series %d outside episodes bounds 1..%d", show.Name, field, special.Series, len(show.Episodes))
 		}
@@ -72,8 +75,8 @@ func ValidateSpecialEpisodes(show Show) error {
 	return nil
 }
 
-// ValidateCurrentPosition checks the stored position of a show that is marked
-// as currently watching. A non-current show has no position to validate.
+// ValidateCurrentPosition checks the stored position of a show that is marked as currently watching.
+// A non-current show has no position to validate.
 func ValidateCurrentPosition(show Show) error {
 	if show.CurrentSeries == nil && show.CurrentEpisode == nil {
 		return nil
