@@ -239,22 +239,70 @@ func TestGetAllFilms(t *testing.T) {
 }
 
 func TestGetAvailableGenres(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeShowsFixture(t, dir)
-
-	genres, err := GetAvailableGenres()
-	if err != nil {
-		t.Fatalf("GetAvailableGenres returned error: %v", err)
+	tests := []struct {
+		name  string
+		shows []data.Show
+		want  []string
+	}{
+		{
+			name:  "no shows",
+			shows: []data.Show{},
+			want:  nil,
+		},
+		{
+			name: "single genre",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{1}},
+				{Name: "Show B", Genre: "Drama", Episodes: []int{1}},
+			},
+			want: []string{"Drama"},
+		},
+		{
+			name: "multiple genres",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{1}},
+				{Name: "Show B", Genre: "Comedy", Episodes: []int{1}},
+				{Name: "Show C", Genre: "Sci-Fi", Episodes: []int{1}},
+				{Name: "Show D", Genre: "Drama", Episodes: []int{1}},
+			},
+			want: []string{"Drama", "Comedy", "Sci-Fi"},
+		},
+		{
+			name: "empty genre is ignored",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{1}},
+				{Name: "Show B", Episodes: []int{1}},
+			},
+			want: []string{"Drama"},
+		},
 	}
 
-	expected := map[string]bool{"Drama": true, "Comedy": true, "Sci-Fi": true}
-	if len(genres) != len(expected) {
-		t.Fatalf("expected %d genres, got %d: %v", len(expected), len(genres), genres)
-	}
-	for _, genre := range genres {
-		if !expected[genre] {
-			t.Fatalf("unexpected genre %q in %v", genre, genres)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture, err := json.Marshal(tt.shows)
+			if err != nil {
+				t.Fatalf("marshal shows fixture: %v", err)
+			}
+			writeFixture(t, dir, "shows.json", string(fixture))
+
+			got, err := GetAvailableGenres()
+			if err != nil {
+				t.Fatalf("GetAvailableGenres returned error: %v", err)
+			}
+			if len(got) != len(tt.want) {
+				t.Fatalf("expected %d genres, got %d: %v", len(tt.want), len(got), got)
+			}
+			gotSet := make(map[string]bool, len(got))
+			for _, genre := range got {
+				gotSet[genre] = true
+			}
+			for _, genre := range tt.want {
+				if !gotSet[genre] {
+					t.Errorf("expected genre %q in %v", genre, got)
+				}
+			}
+		})
 	}
 }
 
