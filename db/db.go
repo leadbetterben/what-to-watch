@@ -27,7 +27,7 @@ func SetFullPathResolverForTest(resolver func(string) string) func() {
 	}
 }
 
-func readShows() ([]data.Show, error) {
+func ReadShows() ([]data.Show, error) {
 	raw, err := readFile("shows.json")
 	if err != nil {
 		return nil, fmt.Errorf("readShows: error reading file \n err=%w", err)
@@ -50,56 +50,6 @@ func readShows() ([]data.Show, error) {
 	}
 
 	return shows, nil
-}
-
-// ReadAllShows reads every show from shows.json.
-func ReadAllShows() ([]data.Show, error) {
-	return readShows()
-}
-
-// ReadUnwatchedShows returns shows that have no current position and are not marked for rewatch.
-func ReadUnwatchedShows() ([]data.Show, error) {
-	shows, err := readShows()
-	if err != nil {
-		return nil, fmt.Errorf("ReadUnwatchedShows: %w", err)
-	}
-	filtered := make([]data.Show, 0)
-	for _, show := range shows {
-		if show.CurrentSeries == nil && show.CurrentEpisode == nil && !show.Rewatch {
-			filtered = append(filtered, show)
-		}
-	}
-	return filtered, nil
-}
-
-// ReadCurrentShows returns shows with a current series or episode position.
-func ReadCurrentShows() ([]data.Show, error) {
-	shows, err := readShows()
-	if err != nil {
-		return nil, fmt.Errorf("ReadCurrentShows: %w", err)
-	}
-	filtered := make([]data.Show, 0)
-	for _, show := range shows {
-		if show.CurrentSeries != nil || show.CurrentEpisode != nil {
-			filtered = append(filtered, show)
-		}
-	}
-	return filtered, nil
-}
-
-// ReadRewatchShows returns shows marked for rewatch.
-func ReadRewatchShows() ([]data.Show, error) {
-	shows, err := readShows()
-	if err != nil {
-		return nil, fmt.Errorf("ReadRewatchShows: %w", err)
-	}
-	filtered := make([]data.Show, 0)
-	for _, show := range shows {
-		if show.Rewatch {
-			filtered = append(filtered, show)
-		}
-	}
-	return filtered, nil
 }
 
 // ReadFilms reads the films from the films.json file and returns a slice of Film structs.
@@ -125,7 +75,7 @@ func UpdateCurrentShows(update func([]data.Show) ([]data.Show, bool, error)) (bo
 	showsWriteMu.Lock()
 	defer showsWriteMu.Unlock()
 
-	existing, err := readShows()
+	existing, err := ReadShows()
 	if err != nil {
 		return false, fmt.Errorf("UpdateCurrentShows: error reading shows.json: %w", err)
 	}

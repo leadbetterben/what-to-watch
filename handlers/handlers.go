@@ -11,7 +11,7 @@ import (
 
 // GetCurrentlyWatchingShows retrieves the list of currently watching shows
 func GetCurrentlyWatchingShows() ([]data.Show, error) {
-	shows, err := db.ReadCurrentShows()
+	shows, err := db.ReadShows()
 	if err != nil {
 		return nil, fmt.Errorf("error reading shows: %w", err)
 	}
@@ -106,7 +106,7 @@ func GetAllFilms() ([]data.Film, error) {
 
 // GetAvailableGenres retrieves a list of unique genres from all shows
 func GetAvailableGenres() ([]string, error) {
-	shows, err := db.ReadAllShows()
+	shows, err := db.ReadShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetAvailableGenres: error reading shows: %w", err)
 	}
@@ -127,7 +127,7 @@ func GetAvailableGenres() ([]string, error) {
 
 // GetUnwatchedShowsByGenre retrieves all unwatched shows for a given genre
 func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
-	shows, err := db.ReadUnwatchedShows()
+	shows, err := db.ReadShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetUnwatchedShowsByGenre: error reading shows: %w", err)
 	}
@@ -154,7 +154,7 @@ func GetRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpi
 }
 
 func GetSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
-	shows, err := db.ReadAllShows()
+	shows, err := db.ReadShows()
 	if err != nil {
 		return nil, fmt.Errorf("error reading shows: %w", err)
 	}

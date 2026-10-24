@@ -9,7 +9,7 @@ import (
 	"what-to-watch/data"
 )
 
-func TestReadAllShows(t *testing.T) {
+func TestReadShows(t *testing.T) {
 	dir := useTempDataDir(t)
 	writeFixture(t, dir, "shows.json", `[
   {
@@ -26,7 +26,7 @@ func TestReadAllShows(t *testing.T) {
   }
 ]`)
 
-	shows, err := ReadAllShows()
+	shows, err := ReadShows()
 	if err != nil {
 		t.Fatalf("ReadAllShows returned error: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestReadAllShows(t *testing.T) {
 	}
 }
 
-func TestReadAllShowsRejectsInvalidSeasonalMetadata(t *testing.T) {
+func TestReadShowsRejectsInvalidSeasonalMetadata(t *testing.T) {
 	tests := []struct {
 		name  string
 		entry string
@@ -68,7 +68,7 @@ func TestReadAllShowsRejectsInvalidSeasonalMetadata(t *testing.T) {
 			dir := useTempDataDir(t)
 			fixture := `[{"name":"Example","episodes":[10,13],"specialEpisodes":[` + tt.entry + `]}]`
 			writeFixture(t, dir, "shows.json", fixture)
-			if _, err := ReadAllShows(); err == nil || !strings.Contains(err.Error(), "Example") || !strings.Contains(err.Error(), tt.field) {
+			if _, err := ReadShows(); err == nil || !strings.Contains(err.Error(), "Example") || !strings.Contains(err.Error(), tt.field) {
 				t.Fatalf("expected contextual validation error for %s, got %v", tt.name, err)
 			}
 			raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
@@ -82,33 +82,7 @@ func TestReadAllShowsRejectsInvalidSeasonalMetadata(t *testing.T) {
 	}
 }
 
-func TestReadCurrentShows(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "Slow Horses",
-    "genre": "Drama",
-    "episodes": [6],
-    "provider": "Apple TV+",
-    "currentSeries": 1,
-    "currentEpisode": 5
-  }
-]`)
-
-	shows, err := ReadCurrentShows()
-	if err != nil {
-		t.Fatalf("ReadCurrentShows returned error: %v", err)
-	}
-
-	if len(shows) != 1 {
-		t.Fatalf("expected 1 current show, got %d", len(shows))
-	}
-	if shows[0].Name != "Slow Horses" || shows[0].CurrentEpisode == nil || *shows[0].CurrentEpisode != 5 {
-		t.Fatalf("unexpected current show: %+v", shows[0])
-	}
-}
-
-func TestReadAllShowsRejectsInvalidCurrentPositions(t *testing.T) {
+func TestReadShowsRejectsInvalidCurrentPositions(t *testing.T) {
 	tests := []struct {
 		name string
 		json string
@@ -123,32 +97,10 @@ func TestReadAllShowsRejectsInvalidCurrentPositions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := useTempDataDir(t)
 			writeFixture(t, dir, "shows.json", tt.json)
-			if _, err := ReadAllShows(); err == nil {
+			if _, err := ReadShows(); err == nil {
 				t.Fatalf("expected validation error for %s", tt.name)
 			}
 		})
-	}
-}
-
-func TestReadShowCategories(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {"name":"Unwatched","genre":"Drama","episodes":[6],"provider":"Netflix"},
-  {"name":"Current","genre":"Drama","episodes":[6],"provider":"Netflix","currentSeries":1,"currentEpisode":2},
-  {"name":"Rewatch","genre":"Drama","episodes":[6],"provider":"Netflix","rewatch":true}
-]`)
-
-	unwatched, err := ReadUnwatchedShows()
-	if err != nil || len(unwatched) != 1 || unwatched[0].Name != "Unwatched" {
-		t.Fatalf("unexpected unwatched shows: %v %+v", err, unwatched)
-	}
-	current, err := ReadCurrentShows()
-	if err != nil || len(current) != 1 || current[0].Name != "Current" {
-		t.Fatalf("unexpected current shows: %v %+v", err, current)
-	}
-	rewatch, err := ReadRewatchShows()
-	if err != nil || len(rewatch) != 1 || rewatch[0].Name != "Rewatch" {
-		t.Fatalf("unexpected rewatch shows: %v %+v", err, rewatch)
 	}
 }
 
@@ -182,10 +134,7 @@ func TestReadersReturnErrorForMissingFiles(t *testing.T) {
 		name string
 		read func() error
 	}{
-		{name: "ReadAllShows", read: func() error { _, err := ReadAllShows(); return err }},
-		{name: "ReadUnwatchedShows", read: func() error { _, err := ReadUnwatchedShows(); return err }},
-		{name: "ReadCurrentShows", read: func() error { _, err := ReadCurrentShows(); return err }},
-		{name: "ReadRewatchShows", read: func() error { _, err := ReadRewatchShows(); return err }},
+		{name: "ReadShows", read: func() error { _, err := ReadShows(); return err }},
 		{name: "ReadFilms", read: func() error { _, err := ReadFilms(); return err }},
 	}
 
@@ -204,10 +153,7 @@ func TestReadersReturnErrorForInvalidJSON(t *testing.T) {
 		fileName string
 		read     func() error
 	}{
-		{name: "ReadAllShows", fileName: "shows.json", read: func() error { _, err := ReadAllShows(); return err }},
-		{name: "ReadUnwatchedShows", fileName: "shows.json", read: func() error { _, err := ReadUnwatchedShows(); return err }},
-		{name: "ReadCurrentShows", fileName: "shows.json", read: func() error { _, err := ReadCurrentShows(); return err }},
-		{name: "ReadRewatchShows", fileName: "shows.json", read: func() error { _, err := ReadRewatchShows(); return err }},
+		{name: "ReadShows", fileName: "shows.json", read: func() error { _, err := ReadShows(); return err }},
 		{name: "ReadFilms", fileName: "films.json", read: func() error { _, err := ReadFilms(); return err }},
 	}
 
