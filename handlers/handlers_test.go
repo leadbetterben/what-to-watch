@@ -307,19 +307,69 @@ func TestGetAvailableGenres(t *testing.T) {
 }
 
 func TestGetUnwatchedShowsByGenre(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeShowsFixture(t, dir)
-
-	shows, err := GetUnwatchedShowsByGenre("Drama")
-	if err != nil {
-		t.Fatalf("GetUnwatchedShowsByGenre returned error: %v", err)
+	tests := []struct {
+		name  string
+		shows []data.Show
+		genre string
+		want  []data.Show
+	}{
+		{
+			name:  "no shows",
+			shows: []data.Show{},
+			genre: "Drama",
+			want:  nil,
+		},
+		{
+			name: "no unwatched shows for genre",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
+				{Name: "Show B", Genre: "Comedy", Episodes: []int{1}},
+			},
+			genre: "Drama",
+			want:  nil,
+		},
+		{
+			name: "get unwatched shows for genre",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{2}},
+				{Name: "Show B", Genre: "Comedy", Episodes: []int{1}},
+				{Name: "Show C", Genre: "Drama", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
+				{Name: "Show D", Genre: "Drama", Episodes: []int{3}},
+			},
+			genre: "Drama",
+			want: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{2}},
+				{Name: "Show D", Genre: "Drama", Episodes: []int{3}},
+			},
+		},
+		{
+			name: "genre does not exist",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{1}},
+				{Name: "Show B", Genre: "Comedy", Episodes: []int{1}},
+			},
+			genre: "Horror",
+			want:  nil,
+		},
 	}
 
-	expected := []data.Show{
-		{Name: "Unstarted Drama", Genre: "Drama", Episodes: []int{6}, Provider: "Netflix"},
-	}
-	if !reflect.DeepEqual(shows, expected) {
-		t.Fatalf("expected %+v, got %+v", expected, shows)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture, err := json.Marshal(tt.shows)
+			if err != nil {
+				t.Fatalf("marshal shows fixture: %v", err)
+			}
+			writeFixture(t, dir, "shows.json", string(fixture))
+
+			got, err := GetUnwatchedShowsByGenre(tt.genre)
+			if err != nil {
+				t.Fatalf("GetUnwatchedShowsByGenre returned error: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("expected %+v, got %+v", tt.want, got)
+			}
+		})
 	}
 }
 

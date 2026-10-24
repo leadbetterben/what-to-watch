@@ -55,18 +55,6 @@ func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, bool, er
 	return shows, false, nil
 }
 
-// GetUnwatchedShowsByGenre returns all shows from a given genre that haven't been watched
-// (i.e., shows without CurrentSeries and CurrentEpisode set)
-func GetUnwatchedShowsByGenre(shows []data.Show, genre string) []data.Show {
-	var unwatched []data.Show
-	for _, s := range shows {
-		if s.Genre == genre && s.CurrentSeries == nil && s.CurrentEpisode == nil && !s.Rewatch {
-			unwatched = append(unwatched, s)
-		}
-	}
-	return unwatched
-}
-
 // GetSpecialEpisodes returns curated episodes in the requested category,
 // including the parent show's name and provider.
 func GetSpecialEpisodes(shows []data.Show, category data.SpecialCategory) []data.ShowSpecialEpisode {

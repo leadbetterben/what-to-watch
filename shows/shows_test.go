@@ -151,63 +151,6 @@ func TestMarkEpisodeWatched(t *testing.T) {
 	}
 }
 
-func TestGetUnwatchedShowsByGenre(t *testing.T) {
-	tests := []struct {
-		name     string
-		shows    []data.Show
-		genre    string
-		expected []data.Show
-	}{
-		{
-			name:     "no shows",
-			shows:    []data.Show{},
-			genre:    "Drama",
-			expected: []data.Show(nil),
-		},
-		{
-			name: "no unwatched shows for genre",
-			shows: []data.Show{
-				{Name: "Show A", Genre: "Drama", CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
-				{Name: "Show B", Genre: "Comedy"},
-			},
-			genre:    "Drama",
-			expected: []data.Show(nil),
-		},
-		{
-			name: "get unwatched shows for genre",
-			shows: []data.Show{
-				{Name: "Show A", Genre: "Drama"},
-				{Name: "Show B", Genre: "Comedy"},
-				{Name: "Show C", Genre: "Drama", CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)},
-				{Name: "Show D", Genre: "Drama"},
-			},
-			genre: "Drama",
-			expected: []data.Show{
-				{Name: "Show A", Genre: "Drama"},
-				{Name: "Show D", Genre: "Drama"},
-			},
-		},
-		{
-			name: "genre does not exist",
-			shows: []data.Show{
-				{Name: "Show A", Genre: "Drama"},
-				{Name: "Show B", Genre: "Comedy"},
-			},
-			genre:    "Horror",
-			expected: []data.Show(nil),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetUnwatchedShowsByGenre(tt.shows, tt.genre)
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("expected %+v, got %+v", tt.expected, result)
-			}
-		})
-	}
-}
-
 func TestGetSpecialEpisodes(t *testing.T) {
 	shows := []data.Show{
 		{

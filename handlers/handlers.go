@@ -94,12 +94,18 @@ func GetAvailableGenres() ([]string, error) {
 
 // GetUnwatchedShowsByGenre retrieves all unwatched shows for a given genre
 func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
-	s, err := db.ReadUnwatchedShows()
+	shows, err := db.ReadUnwatchedShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetUnwatchedShowsByGenre: error reading shows: %w", err)
 	}
 
-	return shows.GetUnwatchedShowsByGenre(s, genre), nil
+	var unwatched []data.Show
+	for _, s := range shows {
+		if s.Genre == genre && s.CurrentSeries == nil && s.CurrentEpisode == nil && !s.Rewatch {
+			unwatched = append(unwatched, s)
+		}
+	}
+	return unwatched, nil
 }
 
 // GetHalloweenEpisodes retrieves all curated Halloween episodes.
