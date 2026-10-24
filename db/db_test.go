@@ -1,7 +1,6 @@
 package db
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -224,100 +223,10 @@ func TestReadersReturnErrorForInvalidJSON(t *testing.T) {
 	}
 }
 
-func TestWriteCurrentShowsWritesIndentedJSON(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[]`)
-
-	shows := []data.Show{
-		{
-			Name:           "Severance",
-			Genre:          "Sci-Fi",
-			Episodes:       []int{9},
-			Provider:       "Apple TV+",
-			CurrentSeries:  intPtr(1),
-			CurrentEpisode: intPtr(3),
-		},
-	}
-
-	if err := WriteCurrentShows(shows); err != nil {
-		t.Fatalf("WriteCurrentShows returned error: %v", err)
-	}
-
-	raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
-	if err != nil {
-		t.Fatalf("reading written file: %v", err)
-	}
-
-	if !strings.Contains(string(raw), "\n  {") {
-		t.Fatalf("expected indented JSON, got %q", string(raw))
-	}
-
-	var written []data.Show
-	if err := json.Unmarshal(raw, &written); err != nil {
-		t.Fatalf("written file is not valid JSON: %v", err)
-	}
-	if len(written) != 1 || written[0].Name != "Severance" {
-		t.Fatalf("unexpected written shows: %+v", written)
-	}
-}
-
-func TestWriteCurrentShowsReplacesExistingFileAndRemovesTempFile(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[]`)
-
-	if err := WriteCurrentShows([]data.Show{{Name: "Andor", Genre: "Sci-Fi"}}); err != nil {
-		t.Fatalf("WriteCurrentShows returned error: %v", err)
-	}
-
-	raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
-	if err != nil {
-		t.Fatalf("reading replaced file: %v", err)
-	}
-	if !strings.Contains(string(raw), `"name": "Andor"`) {
-		t.Fatalf("expected file to be replaced with new show, got %s", string(raw))
-	}
-
-	matches, err := filepath.Glob(filepath.Join(dir, "*.tmp"))
-	if err != nil {
-		t.Fatalf("checking temp files: %v", err)
-	}
-	if len(matches) != 0 {
-		t.Fatalf("expected no temp files, found %v", matches)
-	}
-}
-
-func TestWriteCurrentShowsPreservesOtherCategories(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {"name":"Unwatched","provider":"Netflix","episodes":[3]},
-  {"name":"Current","provider":"Netflix","episodes":[3],"currentSeries":1,"currentEpisode":1},
-  {"name":"Rewatch","provider":"Netflix","episodes":[3],"rewatch":true}
-]`)
-
-	if err := WriteCurrentShows([]data.Show{{Name: "Current", Provider: "Netflix", Episodes: []int{3}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}}); err != nil {
-		t.Fatalf("WriteCurrentShows returned error: %v", err)
-	}
-	all, err := ReadAllShows()
-	if err != nil || len(all) != 3 {
-		t.Fatalf("expected three preserved shows, got %v %+v", err, all)
-	}
-	if all[0].Name != "Unwatched" || all[1].Name != "Rewatch" || all[2].Name != "Current" {
-		t.Fatalf("unexpected merged order/content: %+v", all)
-	}
-}
-
 func TestReadFileReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
 	t.Cleanup(SetFullPathResolverForTest(func(string) string { return "" }))
 
 	if _, err := readFile("shows.json"); err == nil {
-		t.Fatalf("expected error when path cannot be resolved")
-	}
-}
-
-func TestWriteCurrentShowsReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
-	t.Cleanup(SetFullPathResolverForTest(func(string) string { return "" }))
-
-	if err := WriteCurrentShows([]data.Show{}); err == nil {
 		t.Fatalf("expected error when path cannot be resolved")
 	}
 }
@@ -339,8 +248,4 @@ func writeFixture(t *testing.T, dir, name, content string) {
 	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0644); err != nil {
 		t.Fatalf("writing fixture %s: %v", name, err)
 	}
-}
-
-func intPtr(i int) *int {
-	return &i
 }

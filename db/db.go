@@ -117,29 +117,6 @@ func ReadFilms() ([]data.Film, error) {
 	return films, nil
 }
 
-// WriteCurrentShows replaces the current-position records in shows.json with the provided slice.
-// It writes to a temporary file in the same directory and renames it
-// to avoid corrupting the file on failure.
-func WriteCurrentShows(shows []data.Show) error {
-	showsWriteMu.Lock()
-	defer showsWriteMu.Unlock()
-
-	existing, err := readShows()
-	if err != nil {
-		return fmt.Errorf("WriteCurrentShows: error reading shows.json \n err=%w", err)
-	}
-
-	merged := make([]data.Show, 0, len(existing)+len(shows))
-	for _, show := range existing {
-		if show.CurrentSeries == nil && show.CurrentEpisode == nil {
-			merged = append(merged, show)
-		}
-	}
-	merged = append(merged, shows...)
-
-	return writeShows(merged)
-}
-
 // UpdateCurrentShows applies update to the latest current shows and persists
 // the result while holding the process-local write lock for the entire
 // read-modify-merge-write transaction. The callback returns the updated shows,
