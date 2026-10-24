@@ -9,9 +9,17 @@ import (
 	"what-to-watch/db"
 )
 
+// Storage operations are variables so handler tests can stub persistence without
+// depending on the database implementation.
+var (
+	readShows          = db.ReadShows
+	readFilms          = db.ReadFilms
+	updateCurrentShows = db.UpdateCurrentShows
+)
+
 // GetCurrentlyWatchingShows retrieves the list of currently watching shows
 func GetCurrentlyWatchingShows() ([]data.Show, error) {
-	shows, err := db.ReadShows()
+	shows, err := readShows()
 	if err != nil {
 		return nil, fmt.Errorf("error reading shows: %w", err)
 	}
@@ -43,7 +51,7 @@ func GetCurrentlyWatchingShows() ([]data.Show, error) {
 // MarkShowWatched marks an episode as watched and updates the data store.
 // idx is 1-based index from the currently watching list
 func MarkShowWatched(idx int) (bool, error) {
-	completed, err := db.UpdateCurrentShows(func(shows []data.Show) ([]data.Show, bool, error) {
+	completed, err := updateCurrentShows(func(shows []data.Show) ([]data.Show, bool, error) {
 		if idx <= 0 {
 			return nil, false, fmt.Errorf("invalid index: %d", idx)
 		}
@@ -96,7 +104,7 @@ func MarkShowWatched(idx int) (bool, error) {
 
 // GetAllFilms retrieves the list of all films
 func GetAllFilms() ([]data.Film, error) {
-	films, err := db.ReadFilms()
+	films, err := readFilms()
 	if err != nil {
 		return nil, fmt.Errorf("error reading films: %w", err)
 	}
@@ -106,7 +114,7 @@ func GetAllFilms() ([]data.Film, error) {
 
 // GetAvailableGenres retrieves a list of unique genres from all shows
 func GetAvailableGenres() ([]string, error) {
-	shows, err := db.ReadShows()
+	shows, err := readShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetAvailableGenres: error reading shows: %w", err)
 	}
@@ -127,7 +135,7 @@ func GetAvailableGenres() ([]string, error) {
 
 // GetUnwatchedShowsByGenre retrieves all unwatched shows for a given genre
 func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
-	shows, err := db.ReadShows()
+	shows, err := readShows()
 	if err != nil {
 		return nil, fmt.Errorf("GetUnwatchedShowsByGenre: error reading shows: %w", err)
 	}
@@ -154,7 +162,7 @@ func GetRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpi
 }
 
 func GetSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
-	shows, err := db.ReadShows()
+	shows, err := readShows()
 	if err != nil {
 		return nil, fmt.Errorf("error reading shows: %w", err)
 	}

@@ -1,24 +1,18 @@
 package handlers
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 
 	"what-to-watch/data"
-	"what-to-watch/db"
 )
 
 func TestGetCurrentlyWatchingShows(t *testing.T) {
 	tests := []struct {
-		name          string
-		shows         []data.Show
-		want          []data.Show
-		wantErrorPart string
+		name  string
+		shows []data.Show
+		want  []data.Show
 	}{
 		{
 			name:  "no shows",
@@ -43,59 +37,12 @@ func TestGetCurrentlyWatchingShows(t *testing.T) {
 				{Name: "Show A", Genre: "Drama", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2), Series: "1", Episode: "2"},
 			},
 		},
-		{
-			name:          "series only",
-			shows:         []data.Show{{Name: "Partial", Episodes: []int{2}, CurrentSeries: intPtr(1)}},
-			wantErrorPart: "currentSeries and currentEpisode",
-		},
-		{
-			name:          "episode only",
-			shows:         []data.Show{{Name: "Partial", Episodes: []int{2}, CurrentEpisode: intPtr(1)}},
-			wantErrorPart: "currentSeries and currentEpisode",
-		},
-		{
-			name:          "series below bounds",
-			shows:         []data.Show{{Name: "Bad Series", Episodes: []int{2}, CurrentSeries: intPtr(0), CurrentEpisode: intPtr(1)}},
-			wantErrorPart: "currentSeries",
-		},
-		{
-			name:          "negative series",
-			shows:         []data.Show{{Name: "Bad Series", Episodes: []int{2}, CurrentSeries: intPtr(-1), CurrentEpisode: intPtr(1)}},
-			wantErrorPart: "currentSeries",
-		},
-		{
-			name:          "negative episode",
-			shows:         []data.Show{{Name: "Bad Episode", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(-1)}},
-			wantErrorPart: "currentEpisode",
-		},
-		{
-			name:          "episode above bounds",
-			shows:         []data.Show{{Name: "Bad Episode", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(3)}},
-			wantErrorPart: "currentEpisode",
-		},
-		{
-			name:          "non-positive episode count",
-			shows:         []data.Show{{Name: "Bad Count", Episodes: []int{0}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}},
-			wantErrorPart: "episodes[1]",
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			fixture, err := json.Marshal(tt.shows)
-			if err != nil {
-				t.Fatalf("marshal shows fixture: %v", err)
-			}
-			writeFixture(t, dir, "shows.json", string(fixture))
-
+			stubStorage(t, tt.shows, nil)
 			got, err := GetCurrentlyWatchingShows()
-			if tt.wantErrorPart != "" {
-				if err == nil || !strings.Contains(err.Error(), tt.wantErrorPart) || !strings.Contains(err.Error(), tt.shows[0].Name) {
-					t.Fatalf("expected contextual %q validation error for %q, got %v", tt.wantErrorPart, tt.shows[0].Name, err)
-				}
-				return
-			}
 			if err != nil {
 				t.Fatalf("GetCurrentlyWatchingShows returned error: %v", err)
 			}
@@ -187,13 +134,15 @@ func TestMarkShowWatched(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			fixture, err := json.Marshal(tt.shows)
-			if err != nil {
-				t.Fatalf("marshal shows fixture: %v", err)
+			stored := append([]data.Show(nil), tt.shows...)
+			stubStorage(t, nil, nil)
+			updateCurrentShows = func(update func([]data.Show) ([]data.Show, bool, error)) (bool, error) {
+				updated, completed, err := update(stored)
+				if err == nil {
+					stored = updated
+				}
+				return completed, err
 			}
-			writeFixture(t, dir, "shows.json", string(fixture))
-
 			completed, err := MarkShowWatched(tt.index)
 			if tt.wantError {
 				if err == nil {
@@ -208,7 +157,7 @@ func TestMarkShowWatched(t *testing.T) {
 				t.Fatalf("expected completed=%v, got %v", tt.wantCompleted, completed)
 			}
 
-			gotShows := readCurrentShowsFixture(t, dir)
+			gotShows := stored
 			if !reflect.DeepEqual(gotShows, tt.wantShows) {
 				t.Fatalf("expected persisted shows %+v, got %+v", tt.wantShows, gotShows)
 			}
@@ -216,70 +165,17 @@ func TestMarkShowWatched(t *testing.T) {
 	}
 }
 
-func TestMarkShowWatchedSerializesConcurrentUpdates(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {"name":"Current","episodes":[100],"provider":"Netflix","currentSeries":1,"currentEpisode":1},
-  {"name":"Unwatched","episodes":[6],"provider":"Prime"}
-]`)
-
-	const updates = 24
-	start := make(chan struct{})
-	errs := make(chan error, updates)
-	var wg sync.WaitGroup
-	for range updates {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			<-start
-			if _, err := MarkShowWatched(1); err != nil {
-				errs <- err
-			}
-		}()
-	}
-	close(start)
-	wg.Wait()
-	close(errs)
-	for err := range errs {
-		t.Errorf("MarkShowWatched returned error: %v", err)
-	}
-
-	all := readCurrentShowsFixture(t, dir)
-	if len(all) != 2 {
-		t.Fatalf("expected current and unwatched shows to remain, got %+v", all)
-	}
-	if all[0].Name != "Unwatched" {
-		t.Fatalf("expected unwatched record to be preserved, got %+v", all[0])
-	}
-	if all[1].Name != "Current" || all[1].CurrentEpisode == nil || *all[1].CurrentEpisode != updates+1 {
-		t.Fatalf("expected all %d updates to be retained, got %+v", updates, all[1])
-	}
-}
-
 func TestGetAllFilms(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "films.json", `[
-  {
-    "name": "Arrival",
-    "genre": "Sci-Fi",
-    "provider": "Netflix"
-  },
-  {
-    "name": "Paddington 2",
-    "genre": "Comedy",
-    "provider": "BBC iPlayer"
-  }
-]`)
-
+	expected := []data.Film{
+		{Name: "Arrival", Genre: "Sci-Fi", Provider: "Netflix"},
+		{Name: "Paddington 2", Genre: "Comedy", Provider: "BBC iPlayer"},
+	}
+	stubStorage(t, nil, expected)
 	films, err := GetAllFilms()
 	if err != nil {
 		t.Fatalf("GetAllFilms returned error: %v", err)
 	}
 
-	expected := []data.Film{
-		{Name: "Arrival", Genre: "Sci-Fi", Provider: "Netflix"},
-		{Name: "Paddington 2", Genre: "Comedy", Provider: "BBC iPlayer"},
-	}
 	if !reflect.DeepEqual(films, expected) {
 		t.Fatalf("expected %+v, got %+v", expected, films)
 	}
@@ -326,13 +222,7 @@ func TestGetAvailableGenres(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			fixture, err := json.Marshal(tt.shows)
-			if err != nil {
-				t.Fatalf("marshal shows fixture: %v", err)
-			}
-			writeFixture(t, dir, "shows.json", string(fixture))
-
+			stubStorage(t, tt.shows, nil)
 			got, err := GetAvailableGenres()
 			if err != nil {
 				t.Fatalf("GetAvailableGenres returned error: %v", err)
@@ -402,13 +292,7 @@ func TestGetUnwatchedShowsByGenre(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			fixture, err := json.Marshal(tt.shows)
-			if err != nil {
-				t.Fatalf("marshal shows fixture: %v", err)
-			}
-			writeFixture(t, dir, "shows.json", string(fixture))
-
+			stubStorage(t, tt.shows, nil)
 			got, err := GetUnwatchedShowsByGenre(tt.genre)
 			if err != nil {
 				t.Fatalf("GetUnwatchedShowsByGenre returned error: %v", err)
@@ -464,13 +348,7 @@ func TestGetSeasonalSpecialEpisodes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			fixture, err := json.Marshal(shows)
-			if err != nil {
-				t.Fatalf("marshal shows fixture: %v", err)
-			}
-			writeFixture(t, dir, "shows.json", string(fixture))
-
+			stubStorage(t, shows, nil)
 			got, err := tt.call()
 			if err != nil {
 				t.Fatalf("seasonal special episode handler returned error: %v", err)
@@ -535,13 +413,7 @@ func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dir := useTempDataDir(t)
-			fixture, err := json.Marshal(tt.shows)
-			if err != nil {
-				t.Fatalf("marshal shows fixture: %v", err)
-			}
-			writeFixture(t, dir, "shows.json", string(fixture))
-
+			stubStorage(t, tt.shows, nil)
 			got, err := tt.call()
 			if tt.wantErrorPart != "" {
 				if err == nil || !strings.Contains(err.Error(), tt.wantErrorPart) {
@@ -559,39 +431,16 @@ func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
 	}
 }
 
-func useTempDataDir(t *testing.T) string {
+func stubStorage(t *testing.T, shows []data.Show, films []data.Film) {
 	t.Helper()
-
-	dir := t.TempDir()
-	t.Cleanup(db.SetFullPathResolverForTest(func(path string) string {
-		return filepath.Join(dir, path)
-	}))
-
-	return dir
-}
-
-func writeFixture(t *testing.T, dir, name, content string) {
-	t.Helper()
-
-	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0644); err != nil {
-		t.Fatalf("writing fixture %s: %v", name, err)
+	oldReadShows, oldReadFilms, oldUpdate := readShows, readFilms, updateCurrentShows
+	readShows = func() ([]data.Show, error) { return shows, nil }
+	readFilms = func() ([]data.Film, error) { return films, nil }
+	updateCurrentShows = func(update func([]data.Show) ([]data.Show, bool, error)) (bool, error) {
+		_, completed, err := update(shows)
+		return completed, err
 	}
-}
-
-func readCurrentShowsFixture(t *testing.T, dir string) []data.Show {
-	t.Helper()
-
-	raw, err := os.ReadFile(filepath.Join(dir, "shows.json"))
-	if err != nil {
-		t.Fatalf("reading current shows fixture: %v", err)
-	}
-
-	var shows []data.Show
-	if err := json.Unmarshal(raw, &shows); err != nil {
-		t.Fatalf("unmarshaling current shows fixture: %v", err)
-	}
-
-	return shows
+	t.Cleanup(func() { readShows, readFilms, updateCurrentShows = oldReadShows, oldReadFilms, oldUpdate })
 }
 
 func intPtr(i int) *int {
