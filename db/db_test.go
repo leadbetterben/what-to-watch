@@ -289,9 +289,9 @@ func TestWriteCurrentShowsReplacesExistingFileAndRemovesTempFile(t *testing.T) {
 func TestWriteCurrentShowsPreservesOtherCategories(t *testing.T) {
 	dir := useTempDataDir(t)
 	writeFixture(t, dir, "shows.json", `[
-  {"name":"Unwatched","provider":"Netflix"},
+  {"name":"Unwatched","provider":"Netflix","episodes":[3]},
   {"name":"Current","provider":"Netflix","episodes":[3],"currentSeries":1,"currentEpisode":1},
-  {"name":"Rewatch","provider":"Netflix","rewatch":true}
+  {"name":"Rewatch","provider":"Netflix","episodes":[3],"rewatch":true}
 ]`)
 
 	if err := WriteCurrentShows([]data.Show{{Name: "Current", Provider: "Netflix", Episodes: []int{3}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}}); err != nil {
