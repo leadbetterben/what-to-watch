@@ -12,6 +12,9 @@ import (
 func GetCurrentlyWatching(shows []data.Show) ([]data.Show, error) {
 	var watching []data.Show
 	for _, s := range shows {
+		if err := data.ValidateCurrentPosition(s); err != nil {
+			return nil, err
+		}
 		if s.CurrentSeries == nil && s.CurrentEpisode == nil {
 			continue
 		}
@@ -49,7 +52,10 @@ func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, bool, er
 
 	s := &shows[listIndex-1]
 
-	if s.CurrentSeries == nil || s.CurrentEpisode == nil {
+	if err := data.ValidateCurrentPosition(*s); err != nil {
+		return nil, false, err
+	}
+	if s.CurrentSeries == nil && s.CurrentEpisode == nil {
 		return nil, false, fmt.Errorf("selected show is not currently being watched")
 	}
 
@@ -57,13 +63,6 @@ func MarkEpisodeWatched(shows []data.Show, listIndex int) ([]data.Show, bool, er
 	curEpisode := *s.CurrentEpisode
 
 	// Determine episodes in current series. `Episodes` slice holds episode counts per series.
-	if curSeries <= 0 || curSeries > len(s.Episodes) {
-		// Defensive: if data is malformed, treat as finished
-		s.CurrentSeries = nil
-		s.CurrentEpisode = nil
-		return shows, true, nil
-	}
-
 	episodesInSeries := s.Episodes[curSeries-1]
 
 	// increment episode

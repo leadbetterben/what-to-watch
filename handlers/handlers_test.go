@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"what-to-watch/data"
@@ -113,6 +114,46 @@ func TestMarkShowWatchedCompletesAndPersistsShow(t *testing.T) {
 	}
 	if shows[0].CurrentSeries != nil || shows[0].CurrentEpisode != nil {
 		t.Fatalf("expected persisted show to clear current position, got %+v", shows[0])
+	}
+}
+
+func TestMarkShowWatchedSerializesConcurrentUpdates(t *testing.T) {
+	dir := useTempDataDir(t)
+	writeFixture(t, dir, "shows.json", `[
+  {"name":"Current","episodes":[100],"provider":"Netflix","currentSeries":1,"currentEpisode":1},
+  {"name":"Unwatched","episodes":[6],"provider":"Prime"}
+]`)
+
+	const updates = 24
+	start := make(chan struct{})
+	errs := make(chan error, updates)
+	var wg sync.WaitGroup
+	for range updates {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			if _, err := MarkShowWatched(1); err != nil {
+				errs <- err
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Errorf("MarkShowWatched returned error: %v", err)
+	}
+
+	all := readCurrentShowsFixture(t, dir)
+	if len(all) != 2 {
+		t.Fatalf("expected current and unwatched shows to remain, got %+v", all)
+	}
+	if all[0].Name != "Unwatched" {
+		t.Fatalf("expected unwatched record to be preserved, got %+v", all[0])
+	}
+	if all[1].Name != "Current" || all[1].CurrentEpisode == nil || *all[1].CurrentEpisode != updates+1 {
+		t.Fatalf("expected all %d updates to be retained, got %+v", updates, all[1])
 	}
 }
 

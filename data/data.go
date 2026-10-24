@@ -72,6 +72,39 @@ func ValidateSpecialEpisodes(show Show) error {
 	return nil
 }
 
+// ValidateCurrentPosition checks the stored position of a show that is marked
+// as currently watching. A non-current show has no position to validate.
+func ValidateCurrentPosition(show Show) error {
+	if show.CurrentSeries == nil && show.CurrentEpisode == nil {
+		return nil
+	}
+	if show.CurrentSeries == nil || show.CurrentEpisode == nil {
+		return fmt.Errorf("show %q must have both currentSeries and currentEpisode", show.Name)
+	}
+
+	if *show.CurrentSeries <= 0 {
+		return fmt.Errorf("show %q has invalid currentSeries %d: must be positive", show.Name, *show.CurrentSeries)
+	}
+	if *show.CurrentSeries > len(show.Episodes) {
+		return fmt.Errorf("show %q has currentSeries %d outside episodes bounds 1..%d", show.Name, *show.CurrentSeries, len(show.Episodes))
+	}
+	if *show.CurrentEpisode <= 0 {
+		return fmt.Errorf("show %q has invalid currentEpisode %d: must be positive", show.Name, *show.CurrentEpisode)
+	}
+
+	for i, count := range show.Episodes {
+		if count <= 0 {
+			return fmt.Errorf("show %q has invalid episodes[%d] count %d: must be positive", show.Name, i+1, count)
+		}
+	}
+
+	episodesInSeries := show.Episodes[*show.CurrentSeries-1]
+	if *show.CurrentEpisode > episodesInSeries {
+		return fmt.Errorf("show %q has currentEpisode %d outside series %d episode bounds 1..%d", show.Name, *show.CurrentEpisode, *show.CurrentSeries, episodesInSeries)
+	}
+	return nil
+}
+
 type Film struct {
 	Name     string `json:"name"`
 	Genre    string `json:"genre"`

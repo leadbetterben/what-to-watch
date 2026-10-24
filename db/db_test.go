@@ -109,6 +109,28 @@ func TestReadCurrentShows(t *testing.T) {
 	}
 }
 
+func TestReadAllShowsRejectsInvalidCurrentPositions(t *testing.T) {
+	tests := []struct {
+		name string
+		json string
+	}{
+		{name: "partial position", json: `[{"name":"Partial","episodes":[2],"currentSeries":1}]`},
+		{name: "series outside bounds", json: `[{"name":"Bad Series","episodes":[2],"currentSeries":2,"currentEpisode":1}]`},
+		{name: "episode outside bounds", json: `[{"name":"Bad Episode","episodes":[2],"currentSeries":1,"currentEpisode":3}]`},
+		{name: "non-positive episode count", json: `[{"name":"Bad Count","episodes":[0],"currentSeries":1,"currentEpisode":1}]`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			writeFixture(t, dir, "shows.json", tt.json)
+			if _, err := ReadAllShows(); err == nil {
+				t.Fatalf("expected validation error for %s", tt.name)
+			}
+		})
+	}
+}
+
 func TestReadShowCategories(t *testing.T) {
 	dir := useTempDataDir(t)
 	writeFixture(t, dir, "shows.json", `[
@@ -268,11 +290,11 @@ func TestWriteCurrentShowsPreservesOtherCategories(t *testing.T) {
 	dir := useTempDataDir(t)
 	writeFixture(t, dir, "shows.json", `[
   {"name":"Unwatched","provider":"Netflix"},
-  {"name":"Current","provider":"Netflix","currentSeries":1,"currentEpisode":1},
+  {"name":"Current","provider":"Netflix","episodes":[3],"currentSeries":1,"currentEpisode":1},
   {"name":"Rewatch","provider":"Netflix","rewatch":true}
 ]`)
 
-	if err := WriteCurrentShows([]data.Show{{Name: "Current", Provider: "Netflix", CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}}); err != nil {
+	if err := WriteCurrentShows([]data.Show{{Name: "Current", Provider: "Netflix", Episodes: []int{3}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)}}); err != nil {
 		t.Fatalf("WriteCurrentShows returned error: %v", err)
 	}
 	all, err := ReadAllShows()

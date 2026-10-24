@@ -14,6 +14,9 @@ Show data is stored in `db/shows.json` as one array. Shows with
 Seasonal entries in `specialEpisodes` use a supported `halloween` or `christmas`
 category with positive series and episode numbers. When `episodes` counts are
 available, the seasonal position must fit within those bounds.
+For a currently watched show, both position fields must be positive and within
+the series and episode counts in `episodes`. Episode counts for that show must
+also be positive; malformed positions are reported as data errors.
 
 The `plans/` directory contains AI-generated plans for implementations.
 
@@ -58,6 +61,8 @@ go run . -mode=http -port=8080
 The server listens on `127.0.0.1` only, so it is reachable from this computer and not from other machines on the network. The port can be customized with the `-port` flag (default: 8080).
 
 HTTP mode is intended for local use. Remote deployment and access from web or app clients are not currently supported. The server applies a 5-second header read timeout, a 10-second read timeout, a 30-second write timeout, and a 60-second idle connection timeout.
+
+Show progress updates are serialized across concurrent requests within one running process. Running multiple application processes that write to the same `shows.json` file is not supported.
 
 #### Available Endpoints
 
