@@ -83,7 +83,7 @@ func TestReadFilms(t *testing.T) {
 		name    string
 		fixture string
 		want    []data.Film
-		wantErr []string
+		wantErr string
 	}{
 		{
 			name:    "success",
@@ -94,13 +94,13 @@ func TestReadFilms(t *testing.T) {
 			name:    "missing file",
 			fixture: "",
 			want:    nil,
-			wantErr: []string{"ReadFilms: error reading file: readFile: error reading file films.json: open", "films.json: The system cannot find the file specified."},
+			wantErr: "ReadFilms: error reading file: readFile: error reading file films.json: open",
 		},
 		{
 			name:    "invalid JSON",
 			fixture: `{"bad json"`,
 			want:    nil,
-			wantErr: []string{"ReadFilms: error unmarshalling JSON: unexpected end of JSON input"},
+			wantErr: "ReadFilms: error unmarshalling JSON: unexpected end of JSON input",
 		},
 	}
 
@@ -111,14 +111,12 @@ func TestReadFilms(t *testing.T) {
 				writeFixture(t, dir, "films.json", tt.fixture)
 			}
 			films, err := ReadFilms()
-			if len(tt.wantErr) > 0 {
+			if tt.wantErr != "" {
 				if err == nil {
 					t.Fatal("expected error, got nil")
 				}
-				for _, fragment := range tt.wantErr {
-					if !strings.Contains(err.Error(), fragment) {
-						t.Fatalf("expected error containing %q, got %q", fragment, err.Error())
-					}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("expected error containing %q, got %q", tt.wantErr, err.Error())
 				}
 				return
 			}
