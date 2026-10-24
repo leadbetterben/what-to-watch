@@ -17,16 +17,6 @@ var fullPathResolver = getFullPath
 // Multiple processes writing the same shows.json file are not supported.
 var showsWriteMu sync.Mutex
 
-// SetFullPathResolverForTest replaces the data file path resolver and returns
-// a restore function. It is intended for tests that need isolated fixture files.
-func SetFullPathResolverForTest(resolver func(string) string) func() {
-	originalResolver := fullPathResolver
-	fullPathResolver = resolver
-	return func() {
-		fullPathResolver = originalResolver
-	}
-}
-
 func ReadShows() ([]data.Show, error) {
 	raw, err := readFile("shows.json")
 	if err != nil {

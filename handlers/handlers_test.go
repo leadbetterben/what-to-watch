@@ -344,6 +344,13 @@ func TestGetSeasonalSpecialEpisodes(t *testing.T) {
 				{ShowName: "The Office", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
 			},
 		},
+		{
+			name: "Unknown",
+			call: func() ([]data.ShowSpecialEpisode, error) {
+				return GetSpecialEpisodes(data.SpecialCategory("unknown"))
+			},
+			want: []data.ShowSpecialEpisode{},
+		},
 	}
 
 	for _, tt := range tests {

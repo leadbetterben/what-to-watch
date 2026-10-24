@@ -170,7 +170,7 @@ func TestReadersReturnErrorForInvalidJSON(t *testing.T) {
 }
 
 func TestReadFileReturnsErrorWhenPathCannotBeResolved(t *testing.T) {
-	t.Cleanup(SetFullPathResolverForTest(func(string) string { return "" }))
+	t.Cleanup(setFullPathResolverForTest(func(string) string { return "" }))
 
 	if _, err := readFile("shows.json"); err == nil {
 		t.Fatalf("expected error when path cannot be resolved")
@@ -181,11 +181,21 @@ func useTempDataDir(t *testing.T) string {
 	t.Helper()
 
 	dir := t.TempDir()
-	t.Cleanup(SetFullPathResolverForTest(func(path string) string {
+	t.Cleanup(setFullPathResolverForTest(func(path string) string {
 		return filepath.Join(dir, path)
 	}))
 
 	return dir
+}
+
+// setFullPathResolverForTest replaces the data file path resolver and returns
+// a restore function. It is intended for tests that need isolated fixture files.
+func setFullPathResolverForTest(resolver func(string) string) func() {
+	originalResolver := fullPathResolver
+	fullPathResolver = resolver
+	return func() {
+		fullPathResolver = originalResolver
+	}
 }
 
 func writeFixture(t *testing.T, dir, name, content string) {
