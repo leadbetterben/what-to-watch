@@ -56,6 +56,8 @@ The server listens on `127.0.0.1` only, so it is reachable from this computer an
 
 HTTP mode is intended for local use. Remote deployment and access from web or app clients are not currently supported. The server applies a 5-second header read timeout, a 10-second read timeout, a 30-second write timeout, and a 60-second idle connection timeout.
 
+Show progress updates are serialized across concurrent requests within one running process. Running multiple application processes that write to the same `shows.json` file is not supported.
+
 #### Available Endpoints
 
 - `GET /health` — Health check
