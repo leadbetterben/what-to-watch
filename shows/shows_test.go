@@ -2,84 +2,10 @@ package shows
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 
 	"what-to-watch/data"
 )
-
-func TestGetCurrentlyWatching(t *testing.T) {
-	tests := []struct {
-		name     string
-		shows    []data.Show
-		expected []data.Show
-	}{
-		{
-			name:     "no shows",
-			shows:    []data.Show{},
-			expected: nil,
-		},
-		{
-			name: "no currently watching shows",
-			shows: []data.Show{
-				{Name: "Show A", Genre: "Drama"},
-				{Name: "Show B", Genre: "Comedy"},
-			},
-			expected: nil,
-		},
-		{
-			name: "some currently watching shows",
-			shows: []data.Show{
-				{Name: "Show A", Genre: "Drama", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)},
-				{Name: "Show B", Genre: "Comedy"},
-			},
-			expected: []data.Show{
-				{Name: "Show A", Genre: "Drama", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2), Series: "1", Episode: "2"},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := GetCurrentlyWatching(tt.shows)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-
-			if len(result) != len(tt.expected) {
-				t.Fatalf("expected %d shows, got %d", len(tt.expected), len(result))
-			}
-
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("expected %+v, got %+v", tt.expected, result)
-			}
-		})
-	}
-}
-
-func TestGetCurrentlyWatchingRejectsInvalidPositions(t *testing.T) {
-	tests := []struct {
-		name  string
-		show  data.Show
-		field string
-	}{
-		{name: "series only", show: data.Show{Name: "Partial", Episodes: []int{2}, CurrentSeries: intPtr(1)}, field: "currentSeries and currentEpisode"},
-		{name: "episode only", show: data.Show{Name: "Partial", Episodes: []int{2}, CurrentEpisode: intPtr(1)}, field: "currentSeries and currentEpisode"},
-		{name: "series below bounds", show: data.Show{Name: "Bad Series", Episodes: []int{2}, CurrentSeries: intPtr(0), CurrentEpisode: intPtr(1)}, field: "currentSeries"},
-		{name: "negative series", show: data.Show{Name: "Bad Series", Episodes: []int{2}, CurrentSeries: intPtr(-1), CurrentEpisode: intPtr(1)}, field: "currentSeries"},
-		{name: "negative episode", show: data.Show{Name: "Bad Episode", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(-1)}, field: "currentEpisode"},
-		{name: "episode above bounds", show: data.Show{Name: "Bad Episode", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(3)}, field: "currentEpisode"},
-		{name: "non-positive episode count", show: data.Show{Name: "Bad Count", Episodes: []int{0}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}, field: "episodes[1]"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if _, err := GetCurrentlyWatching([]data.Show{tt.show}); err == nil || !strings.Contains(err.Error(), tt.field) || !strings.Contains(err.Error(), tt.show.Name) {
-				t.Fatalf("expected contextual %q validation error for %q, got %v", tt.field, tt.show.Name, err)
-			}
-		})
-	}
-}
 
 func TestMarkEpisodeWatched(t *testing.T) {
 	tests := []struct {

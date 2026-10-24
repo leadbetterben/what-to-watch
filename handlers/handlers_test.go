@@ -14,43 +14,95 @@ import (
 )
 
 func TestGetCurrentlyWatchingShows(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "Slow Horses",
-    "genre": "Drama",
-    "episodes": [6],
-    "provider": "Apple TV+",
-    "currentSeries": 1,
-    "currentEpisode": 5
-  },
-  {
-    "name": "Unstarted Comedy",
-    "genre": "Comedy",
-    "episodes": [8],
-    "provider": "Netflix"
-  }
-]`)
-
-	shows, err := GetCurrentlyWatchingShows()
-	if err != nil {
-		t.Fatalf("GetCurrentlyWatchingShows returned error: %v", err)
-	}
-
-	expected := []data.Show{
+	tests := []struct {
+		name          string
+		shows         []data.Show
+		want          []data.Show
+		wantErrorPart string
+	}{
 		{
-			Name:           "Slow Horses",
-			Genre:          "Drama",
-			Episodes:       []int{6},
-			Provider:       "Apple TV+",
-			CurrentSeries:  intPtr(1),
-			CurrentEpisode: intPtr(5),
-			Series:         "1",
-			Episode:        "5",
+			name:  "no shows",
+			shows: []data.Show{},
+			want:  nil,
+		},
+		{
+			name: "no currently watching shows",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{10}},
+				{Name: "Show B", Genre: "Comedy", Episodes: []int{8}},
+			},
+			want: nil,
+		},
+		{
+			name: "some currently watching shows",
+			shows: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2)},
+				{Name: "Show B", Genre: "Comedy", Episodes: []int{8}},
+			},
+			want: []data.Show{
+				{Name: "Show A", Genre: "Drama", Episodes: []int{10}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(2), Series: "1", Episode: "2"},
+			},
+		},
+		{
+			name:          "series only",
+			shows:         []data.Show{{Name: "Partial", Episodes: []int{2}, CurrentSeries: intPtr(1)}},
+			wantErrorPart: "currentSeries and currentEpisode",
+		},
+		{
+			name:          "episode only",
+			shows:         []data.Show{{Name: "Partial", Episodes: []int{2}, CurrentEpisode: intPtr(1)}},
+			wantErrorPart: "currentSeries and currentEpisode",
+		},
+		{
+			name:          "series below bounds",
+			shows:         []data.Show{{Name: "Bad Series", Episodes: []int{2}, CurrentSeries: intPtr(0), CurrentEpisode: intPtr(1)}},
+			wantErrorPart: "currentSeries",
+		},
+		{
+			name:          "negative series",
+			shows:         []data.Show{{Name: "Bad Series", Episodes: []int{2}, CurrentSeries: intPtr(-1), CurrentEpisode: intPtr(1)}},
+			wantErrorPart: "currentSeries",
+		},
+		{
+			name:          "negative episode",
+			shows:         []data.Show{{Name: "Bad Episode", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(-1)}},
+			wantErrorPart: "currentEpisode",
+		},
+		{
+			name:          "episode above bounds",
+			shows:         []data.Show{{Name: "Bad Episode", Episodes: []int{2}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(3)}},
+			wantErrorPart: "currentEpisode",
+		},
+		{
+			name:          "non-positive episode count",
+			shows:         []data.Show{{Name: "Bad Count", Episodes: []int{0}, CurrentSeries: intPtr(1), CurrentEpisode: intPtr(1)}},
+			wantErrorPart: "episodes[1]",
 		},
 	}
-	if !reflect.DeepEqual(shows, expected) {
-		t.Fatalf("expected %+v, got %+v", expected, shows)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture, err := json.Marshal(tt.shows)
+			if err != nil {
+				t.Fatalf("marshal shows fixture: %v", err)
+			}
+			writeFixture(t, dir, "shows.json", string(fixture))
+
+			got, err := GetCurrentlyWatchingShows()
+			if tt.wantErrorPart != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErrorPart) || !strings.Contains(err.Error(), tt.shows[0].Name) {
+					t.Fatalf("expected contextual %q validation error for %q, got %v", tt.wantErrorPart, tt.shows[0].Name, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("GetCurrentlyWatchingShows returned error: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("expected %+v, got %+v", tt.want, got)
+			}
+		})
 	}
 }
 

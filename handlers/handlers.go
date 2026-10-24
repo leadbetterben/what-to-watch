@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 
 	"what-to-watch/data"
 	"what-to-watch/db"
@@ -11,17 +12,36 @@ import (
 
 // GetCurrentlyWatchingShows retrieves the list of currently watching shows
 func GetCurrentlyWatchingShows() ([]data.Show, error) {
-	s, err := db.ReadCurrentShows()
+	shows, err := db.ReadCurrentShows()
 	if err != nil {
 		return nil, fmt.Errorf("error reading shows: %w", err)
 	}
 
-	cw, err := shows.GetCurrentlyWatching(s)
-	if err != nil {
-		return nil, fmt.Errorf("error getting currently watching shows: %w", err)
+	var watching []data.Show
+	for _, s := range shows {
+		if err := data.ValidateCurrentPosition(s); err != nil {
+			return nil, fmt.Errorf("error validating shows: %w", err)
+		}
+		if s.CurrentSeries == nil && s.CurrentEpisode == nil {
+			continue
+		}
+
+		series := "-"
+		if s.CurrentSeries != nil {
+			series = strconv.Itoa(*s.CurrentSeries)
+		}
+		s.Series = series
+
+		episode := "-"
+		if s.CurrentEpisode != nil {
+			episode = strconv.Itoa(*s.CurrentEpisode)
+		}
+		s.Episode = episode
+
+		watching = append(watching, s)
 	}
 
-	return cw, nil
+	return watching, nil
 }
 
 // MarkShowWatched marks an episode as watched and updates the data store
