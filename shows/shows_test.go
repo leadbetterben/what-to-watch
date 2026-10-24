@@ -151,41 +151,6 @@ func TestMarkEpisodeWatched(t *testing.T) {
 	}
 }
 
-func TestGetSpecialEpisodes(t *testing.T) {
-	shows := []data.Show{
-		{
-			Name: "The Office", Provider: "Netflix", Episodes: []int{4, 5, 4},
-			SpecialEpisodes: []data.SpecialEpisode{
-				{Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
-				{Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
-			},
-		},
-		{
-			Name: "The Office", Provider: "Prime", Episodes: []int{6},
-			SpecialEpisodes: []data.SpecialEpisode{
-				{Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
-			},
-		},
-	}
-
-	got := GetSpecialEpisodes(shows, data.SpecialCategoryHalloween)
-	want := []data.ShowSpecialEpisode{
-		{ShowName: "The Office", Provider: "Netflix", Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
-		{ShowName: "The Office", Provider: "Prime", Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("expected %+v, got %+v", want, got)
-	}
-
-	christmas := GetSpecialEpisodes(shows, data.SpecialCategoryChristmas)
-	wantChristmas := []data.ShowSpecialEpisode{{
-		ShowName: "The Office", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4,
-	}}
-	if !reflect.DeepEqual(christmas, wantChristmas) {
-		t.Fatalf("expected %+v, got %+v", wantChristmas, christmas)
-	}
-}
-
 // intPtr is a small test helper to construct *int values inline.
 func intPtr(i int) *int {
 	return &i

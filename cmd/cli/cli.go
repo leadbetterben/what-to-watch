@@ -17,10 +17,18 @@ var (
 	getAllFilms               = handlers.GetAllFilms
 	getAvailableGenres        = handlers.GetAvailableGenres
 	getUnwatchedShowsByGenre  = handlers.GetUnwatchedShowsByGenre
-	getHalloweenEpisodes      = handlers.GetHalloweenEpisodes
-	getChristmasEpisodes      = handlers.GetChristmasEpisodes
-	getRandomHalloweenEpisode = handlers.GetRandomHalloweenEpisode
-	getRandomChristmasEpisode = handlers.GetRandomChristmasEpisode
+	getHalloweenEpisodes      = func() ([]data.ShowSpecialEpisode, error) {
+		return handlers.GetSpecialEpisodes(data.SpecialCategoryHalloween)
+	}
+	getChristmasEpisodes = func() ([]data.ShowSpecialEpisode, error) {
+		return handlers.GetSpecialEpisodes(data.SpecialCategoryChristmas)
+	}
+	getRandomHalloweenEpisode = func() (data.ShowSpecialEpisode, error) {
+		return handlers.GetRandomSpecialEpisode(data.SpecialCategoryHalloween)
+	}
+	getRandomChristmasEpisode = func() (data.ShowSpecialEpisode, error) {
+		return handlers.GetRandomSpecialEpisode(data.SpecialCategoryChristmas)
+	}
 )
 
 // Run starts the interactive CLI mode

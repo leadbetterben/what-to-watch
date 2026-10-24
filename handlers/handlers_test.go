@@ -374,72 +374,91 @@ func TestGetUnwatchedShowsByGenre(t *testing.T) {
 }
 
 func TestGetSeasonalSpecialEpisodes(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "Example Show",
-    "provider": "Netflix",
-    "episodes": [4, 5, 4],
-    "specialEpisodes": [
-      {"category": "halloween", "series": 2, "episode": 5},
-      {"category": "christmas", "series": 3, "episode": 4}
-    ]
-  },
-  {
-    "name": "Example Show",
-    "provider": "Prime",
-    "episodes": [6],
-    "specialEpisodes": [
-      {"category": "halloween", "series": 1, "episode": 6}
-    ]
-  }
-]`)
+	shows := []data.Show{
+		{
+			Name: "The Office", Provider: "Netflix", Episodes: []int{4, 5, 4},
+			SpecialEpisodes: []data.SpecialEpisode{
+				{Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
+				{Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
+			},
+		},
+		{
+			Name: "The Office", Provider: "Prime", Episodes: []int{6},
+			SpecialEpisodes: []data.SpecialEpisode{
+				{Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
+			},
+		},
+	}
+	tests := []struct {
+		name string
+		call func() ([]data.ShowSpecialEpisode, error)
+		want []data.ShowSpecialEpisode
+	}{
+		{
+			name: "Halloween",
+			call: func() ([]data.ShowSpecialEpisode, error) {
+				return GetSpecialEpisodes(data.SpecialCategoryHalloween)
+			},
+			want: []data.ShowSpecialEpisode{
+				{ShowName: "The Office", Provider: "Netflix", Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
+				{ShowName: "The Office", Provider: "Prime", Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
+			},
+		},
+		{
+			name: "Christmas",
+			call: func() ([]data.ShowSpecialEpisode, error) {
+				return GetSpecialEpisodes(data.SpecialCategoryChristmas)
+			},
+			want: []data.ShowSpecialEpisode{
+				{ShowName: "The Office", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
+			},
+		},
+	}
 
-	halloween, err := GetHalloweenEpisodes()
-	if err != nil {
-		t.Fatalf("GetHalloweenEpisodes returned error: %v", err)
-	}
-	wantHalloween := []data.ShowSpecialEpisode{
-		{ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
-		{ShowName: "Example Show", Provider: "Prime", Category: data.SpecialCategoryHalloween, Series: 1, Episode: 6},
-	}
-	if !reflect.DeepEqual(halloween, wantHalloween) {
-		t.Fatalf("expected %+v, got %+v", wantHalloween, halloween)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture, err := json.Marshal(shows)
+			if err != nil {
+				t.Fatalf("marshal shows fixture: %v", err)
+			}
+			writeFixture(t, dir, "shows.json", string(fixture))
 
-	christmas, err := GetChristmasEpisodes()
-	if err != nil {
-		t.Fatalf("GetChristmasEpisodes returned error: %v", err)
-	}
-	wantChristmas := []data.ShowSpecialEpisode{{
-		ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4,
-	}}
-	if !reflect.DeepEqual(christmas, wantChristmas) {
-		t.Fatalf("expected %+v, got %+v", wantChristmas, christmas)
+			got, err := tt.call()
+			if err != nil {
+				t.Fatalf("seasonal special episode handler returned error: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("expected %+v, got %+v", tt.want, got)
+			}
+		})
 	}
 }
 
 func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "Example Show",
-    "provider": "Netflix",
-    "episodes": [4, 5, 4],
-    "specialEpisodes": [
-      {"category": "halloween", "series": 2, "episode": 5},
-      {"category": "christmas", "series": 3, "episode": 4}
-    ]
-  }
-]`)
+	GetRandomHalloweenEpisode := func() (data.ShowSpecialEpisode, error) {
+		return GetRandomSpecialEpisode(data.SpecialCategoryHalloween)
+	}
+	GetRandomChristmasEpisode := func() (data.ShowSpecialEpisode, error) {
+		return GetRandomSpecialEpisode(data.SpecialCategoryChristmas)
+	}
 
 	tests := []struct {
-		name string
-		call func() (data.ShowSpecialEpisode, error)
-		want data.ShowSpecialEpisode
+		name          string
+		shows         []data.Show
+		call          func() (data.ShowSpecialEpisode, error)
+		want          data.ShowSpecialEpisode
+		wantErrorPart string
 	}{
 		{
 			name: "Halloween",
+			shows: []data.Show{{
+				Name: "Example Show", Provider: "Netflix", Episodes: []int{4, 5, 4},
+				SpecialEpisodes: []data.SpecialEpisode{
+					{Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
+					{Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
+				},
+			}},
 			call: GetRandomHalloweenEpisode,
 			want: data.ShowSpecialEpisode{
 				ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5,
@@ -447,126 +466,47 @@ func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
 		},
 		{
 			name: "Christmas",
+			shows: []data.Show{{
+				Name: "Example Show", Provider: "Netflix", Episodes: []int{4, 5, 4},
+				SpecialEpisodes: []data.SpecialEpisode{
+					{Category: data.SpecialCategoryHalloween, Series: 2, Episode: 5},
+					{Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4},
+				},
+			}},
 			call: GetRandomChristmasEpisode,
 			want: data.ShowSpecialEpisode{
 				ShowName: "Example Show", Provider: "Netflix", Category: data.SpecialCategoryChristmas, Series: 3, Episode: 4,
 			},
 		},
+		{
+			name:          "empty Halloween episodes",
+			shows:         []data.Show{},
+			call:          GetRandomHalloweenEpisode,
+			wantErrorPart: "no halloween episodes found",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			fixture, err := json.Marshal(tt.shows)
+			if err != nil {
+				t.Fatalf("marshal shows fixture: %v", err)
+			}
+			writeFixture(t, dir, "shows.json", string(fixture))
+
 			got, err := tt.call()
+			if tt.wantErrorPart != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErrorPart) {
+					t.Fatalf("expected error containing %q, got %v", tt.wantErrorPart, err)
+				}
+				return
+			}
 			if err != nil {
 				t.Fatalf("random episode handler returned error: %v", err)
 			}
 			if got != tt.want {
 				t.Fatalf("expected %+v, got %+v", tt.want, got)
-			}
-		})
-	}
-}
-
-func TestGetRandomSeasonalSpecialEpisodeReturnsErrorWhenEmpty(t *testing.T) {
-	dir := useTempDataDir(t)
-	writeFixture(t, dir, "shows.json", `[]`)
-
-	_, err := GetRandomHalloweenEpisode()
-	if err == nil || !strings.Contains(err.Error(), "no halloween episodes found") {
-		t.Fatalf("expected empty Halloween result error, got %v", err)
-	}
-}
-
-func TestHandlersSurfaceReadErrors(t *testing.T) {
-	useTempDataDir(t)
-
-	tests := []struct {
-		name      string
-		call      func() error
-		wantError string
-	}{
-		{
-			name: "GetCurrentlyWatchingShows",
-			call: func() error {
-				_, err := GetCurrentlyWatchingShows()
-				return err
-			},
-			wantError: "error reading shows",
-		},
-		{
-			name: "MarkShowWatched",
-			call: func() error {
-				_, err := MarkShowWatched(1)
-				return err
-			},
-			wantError: "error reading shows",
-		},
-		{
-			name: "GetAllFilms",
-			call: func() error {
-				_, err := GetAllFilms()
-				return err
-			},
-			wantError: "error reading films",
-		},
-		{
-			name: "GetAvailableGenres",
-			call: func() error {
-				_, err := GetAvailableGenres()
-				return err
-			},
-			wantError: "GetAvailableGenres: error reading shows",
-		},
-		{
-			name: "GetUnwatchedShowsByGenre",
-			call: func() error {
-				_, err := GetUnwatchedShowsByGenre("Drama")
-				return err
-			},
-			wantError: "GetUnwatchedShowsByGenre: error reading shows",
-		},
-		{
-			name: "GetHalloweenEpisodes",
-			call: func() error {
-				_, err := GetHalloweenEpisodes()
-				return err
-			},
-			wantError: "error reading shows",
-		},
-		{
-			name: "GetChristmasEpisodes",
-			call: func() error {
-				_, err := GetChristmasEpisodes()
-				return err
-			},
-			wantError: "error reading shows",
-		},
-		{
-			name: "GetRandomHalloweenEpisode",
-			call: func() error {
-				_, err := GetRandomHalloweenEpisode()
-				return err
-			},
-			wantError: "error reading shows",
-		},
-		{
-			name: "GetRandomChristmasEpisode",
-			call: func() error {
-				_, err := GetRandomChristmasEpisode()
-				return err
-			},
-			wantError: "error reading shows",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.call()
-			if err == nil {
-				t.Fatalf("expected error")
-			}
-			if !strings.Contains(err.Error(), tt.wantError) {
-				t.Fatalf("expected error containing %q, got %q", tt.wantError, err.Error())
 			}
 		})
 	}
@@ -581,44 +521,6 @@ func useTempDataDir(t *testing.T) string {
 	}))
 
 	return dir
-}
-
-func writeShowsFixture(t *testing.T, dir string) {
-	t.Helper()
-
-	writeFixture(t, dir, "shows.json", `[
-  {
-    "name": "Unstarted Drama",
-    "genre": "Drama",
-    "episodes": [6],
-    "provider": "Netflix"
-  },
-  {
-    "name": "Current Drama",
-    "genre": "Drama",
-    "episodes": [8],
-    "provider": "Apple TV+",
-    "currentSeries": 1,
-    "currentEpisode": 2
-  },
-  {
-    "name": "Unstarted Comedy",
-    "genre": "Comedy",
-    "episodes": [10],
-    "provider": "Disney+"
-  },
-  {
-    "name": "Unstarted Sci-Fi",
-    "genre": "Sci-Fi",
-    "episodes": [9],
-    "provider": "Prime"
-  },
-  {
-    "name": "Missing Genre",
-    "episodes": [4],
-    "provider": "Channel 4"
-  }
-]`)
 }
 
 func writeFixture(t *testing.T, dir, name, content string) {

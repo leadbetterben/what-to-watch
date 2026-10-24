@@ -108,28 +108,8 @@ func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
 	return unwatched, nil
 }
 
-// GetHalloweenEpisodes retrieves all curated Halloween episodes.
-func GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error) {
-	return getSpecialEpisodes(data.SpecialCategoryHalloween)
-}
-
-// GetChristmasEpisodes retrieves all curated Christmas episodes.
-func GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error) {
-	return getSpecialEpisodes(data.SpecialCategoryChristmas)
-}
-
-// GetRandomHalloweenEpisode retrieves one curated Halloween episode at random.
-func GetRandomHalloweenEpisode() (data.ShowSpecialEpisode, error) {
-	return getRandomSpecialEpisode(data.SpecialCategoryHalloween)
-}
-
-// GetRandomChristmasEpisode retrieves one curated Christmas episode at random.
-func GetRandomChristmasEpisode() (data.ShowSpecialEpisode, error) {
-	return getRandomSpecialEpisode(data.SpecialCategoryChristmas)
-}
-
-func getRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpisode, error) {
-	episodes, err := getSpecialEpisodes(category)
+func GetRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpisode, error) {
+	episodes, err := GetSpecialEpisodes(category)
 	if err != nil {
 		return data.ShowSpecialEpisode{}, err
 	}
@@ -140,11 +120,26 @@ func getRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpi
 	return episodes[rand.Intn(len(episodes))], nil
 }
 
-func getSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
-	allShows, err := db.ReadAllShows()
+func GetSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
+	shows, err := db.ReadAllShows()
 	if err != nil {
 		return nil, fmt.Errorf("error reading shows: %w", err)
 	}
 
-	return shows.GetSpecialEpisodes(allShows, category), nil
+	episodes := make([]data.ShowSpecialEpisode, 0)
+	for _, show := range shows {
+		for _, special := range show.SpecialEpisodes {
+			if special.Category != category {
+				continue
+			}
+			episodes = append(episodes, data.ShowSpecialEpisode{
+				ShowName: show.Name,
+				Provider: show.Provider,
+				Category: special.Category,
+				Series:   special.Series,
+				Episode:  special.Episode,
+			})
+		}
+	}
+	return episodes, nil
 }

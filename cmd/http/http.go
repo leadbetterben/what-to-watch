@@ -48,19 +48,19 @@ func (h *defaultHandler) GetUnwatchedShowsByGenre(genre string) ([]data.Show, er
 }
 
 func (h *defaultHandler) GetHalloweenEpisodes() ([]data.ShowSpecialEpisode, error) {
-	return handlers.GetHalloweenEpisodes()
+	return handlers.GetSpecialEpisodes(data.SpecialCategoryHalloween)
 }
 
 func (h *defaultHandler) GetChristmasEpisodes() ([]data.ShowSpecialEpisode, error) {
-	return handlers.GetChristmasEpisodes()
+	return handlers.GetSpecialEpisodes(data.SpecialCategoryChristmas)
 }
 
 func (h *defaultHandler) GetRandomHalloweenEpisode() (data.ShowSpecialEpisode, error) {
-	return handlers.GetRandomHalloweenEpisode()
+	return handlers.GetRandomSpecialEpisode(data.SpecialCategoryHalloween)
 }
 
 func (h *defaultHandler) GetRandomChristmasEpisode() (data.ShowSpecialEpisode, error) {
-	return handlers.GetRandomChristmasEpisode()
+	return handlers.GetRandomSpecialEpisode(data.SpecialCategoryChristmas)
 }
 
 // Server holds the HTTP server instance
