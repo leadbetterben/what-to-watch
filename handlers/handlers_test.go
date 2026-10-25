@@ -208,7 +208,7 @@ func TestGetAvailableGenres(t *testing.T) {
 				{Name: "Show C", Genre: "Sci-Fi", Episodes: []int{1}},
 				{Name: "Show D", Genre: "Drama", Episodes: []int{1}},
 			},
-			want: []string{"Drama", "Comedy", "Sci-Fi"},
+			want: []string{"Comedy", "Drama", "Sci-Fi"},
 		},
 		{
 			name: "empty genre is ignored",
@@ -230,14 +230,8 @@ func TestGetAvailableGenres(t *testing.T) {
 			if len(got) != len(tt.want) {
 				t.Fatalf("expected %d genres, got %d: %v", len(tt.want), len(got), got)
 			}
-			gotSet := make(map[string]bool, len(got))
-			for _, genre := range got {
-				gotSet[genre] = true
-			}
-			for _, genre := range tt.want {
-				if !gotSet[genre] {
-					t.Errorf("expected genre %q in %v", genre, got)
-				}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("expected genres %v in lexical order, got %v", tt.want, got)
 			}
 		})
 	}
