@@ -7,98 +7,140 @@ import (
 )
 
 func TestFormatShowsTable(t *testing.T) {
-	shows := []data.Show{
-		{Name: "A", Genre: "Drama", Provider: "BBC", Series: "1", Episode: "2"},
-		{Name: "Long Show", Genre: "Comedy", Provider: "Netflix", Series: "12", Episode: "10"},
+	tests := []struct {
+		name  string
+		shows []data.Show
+		want  string
+	}{
+		{
+			name: "normal case",
+			shows: []data.Show{
+				{Name: "A", Genre: "Drama", Provider: "BBC", Series: "1", Episode: "2"},
+				{Name: "Long Show", Genre: "Comedy", Provider: "Netflix", Series: "12", Episode: "10"},
+			},
+			want: "" +
+				"Index  Name       Genre   Provider  Series  Episode\n" +
+				"-----  ---------  ------  --------  ------  -------\n" +
+				"1      A          Drama   BBC       1       2      \n" +
+				"2      Long Show  Comedy  Netflix   12      10     \n",
+		},
+		{
+			name:  "empty shows",
+			shows: []data.Show{},
+			want:  "No shows currently being watched.\n",
+		},
 	}
 
-	expected := "" +
-		"Index  Name       Genre   Provider  Series  Episode\n" +
-		"-----  ---------  ------  --------  ------  -------\n" +
-		"1      A          Drama   BBC       1       2      \n" +
-		"2      Long Show  Comedy  Netflix   12      10     \n"
-
-	if got := formatShowsTable(shows); got != expected {
-		t.Fatalf("expected:\n%q\ngot:\n%q", expected, got)
-	}
-}
-
-func TestFormatShowsTableEmpty(t *testing.T) {
-	expected := "No shows currently being watched.\n"
-
-	if got := formatShowsTable(nil); got != expected {
-		t.Fatalf("expected %q, got %q", expected, got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formatShowsTable(tt.shows); got != tt.want {
+				t.Fatalf("formatShowsTable() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestFormatShowsByGenreTable(t *testing.T) {
-	shows := []data.Show{
-		{Name: "Long Drama", Provider: "Netflix"},
-		{Name: "A", Provider: "BBC"},
+	tests := []struct {
+		name  string
+		shows []data.Show
+		want  string
+	}{
+		{
+			name: "normal case",
+			shows: []data.Show{
+				{Name: "A", Provider: "BBC"},
+				{Name: "Long Show", Provider: "Netflix"},
+			},
+			want: "" +
+				"Index  Name       Provider\n" +
+				"-----  ---------  --------\n" +
+				"1      A          BBC     \n" +
+				"2      Long Show  Netflix \n",
+		},
+		{
+			name:  "empty shows",
+			shows: []data.Show{},
+			want:  "No unwatched shows in this genre.\n",
+		},
 	}
 
-	expected := "" +
-		"Index  Name        Provider\n" +
-		"-----  ----------  --------\n" +
-		"1      Long Drama  Netflix \n" +
-		"2      A           BBC     \n"
-
-	if got := formatShowsByGenreTable(shows); got != expected {
-		t.Fatalf("expected:\n%q\ngot:\n%q", expected, got)
-	}
-}
-
-func TestFormatShowsByGenreTableEmpty(t *testing.T) {
-	expected := "No unwatched shows in this genre.\n"
-
-	if got := formatShowsByGenreTable(nil); got != expected {
-		t.Fatalf("expected %q, got %q", expected, got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formatShowsByGenreTable(tt.shows); got != tt.want {
+				t.Fatalf("formatShowsByGenreTable() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestFormatFilmsTable(t *testing.T) {
-	films := []data.Film{
-		{Name: "Arrival", Genre: "Sci-Fi", Provider: "Netflix"},
-		{Name: "Up", Genre: "Family", Provider: "Disney+"},
+	test := []struct {
+		name  string
+		films []data.Film
+		want  string
+	}{
+		{
+			name: "normal case",
+			films: []data.Film{
+				{Name: "A", Genre: "Drama", Provider: "BBC"},
+				{Name: "Long Film", Genre: "Comedy", Provider: "Netflix"},
+			},
+			want: "" +
+				"Index  Name       Genre   Provider\n" +
+				"-----  ---------  ------  --------\n" +
+				"1      A          Drama   BBC     \n" +
+				"2      Long Film  Comedy  Netflix \n",
+		},
+		{
+			name:  "empty films",
+			films: []data.Film{},
+			want:  "No films found.\n",
+		},
 	}
 
-	expected := "" +
-		"Index  Name     Genre   Provider\n" +
-		"-----  -------  ------  --------\n" +
-		"1      Arrival  Sci-Fi  Netflix \n" +
-		"2      Up       Family  Disney+ \n"
-
-	if got := formatFilmsTable(films); got != expected {
-		t.Fatalf("expected:\n%q\ngot:\n%q", expected, got)
-	}
-}
-
-func TestFormatFilmsTableEmpty(t *testing.T) {
-	expected := "No films found.\n"
-
-	if got := formatFilmsTable(nil); got != expected {
-		t.Fatalf("expected %q, got %q", expected, got)
+	for _, tt := range test {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formatFilmsTable(tt.films); got != tt.want {
+				t.Fatalf("formatFilmsTable() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
 func TestFormatSpecialEpisodesTable(t *testing.T) {
-	episodes := []data.ShowSpecialEpisode{{
-		ShowName: "Example Show",
-		Provider: "Netflix",
-		Series:   2,
-		Episode:  5,
-	}}
-	want := "" +
-		"Index  Show          Provider  Series  Episode\n" +
-		"-----  ------------  --------  ------  -------\n" +
-		"1      Example Show  Netflix   2       5      \n"
-	if got := formatSpecialEpisodesTable("Halloween", episodes); got != want {
-		t.Fatalf("expected:\n%q\ngot:\n%q", want, got)
+	tests := []struct {
+		name     string
+		category string
+		episodes []data.ShowSpecialEpisode
+		want     string
+	}{
+		{
+			name:     "normal case",
+			category: "Halloween",
+			episodes: []data.ShowSpecialEpisode{
+				{ShowName: "A", Provider: "BBC", Series: 1, Episode: 2},
+				{ShowName: "Long Show", Provider: "Netflix", Series: 12, Episode: 10},
+			},
+			want: "" +
+				"Index  Show       Provider  Series  Episode\n" +
+				"-----  ---------  --------  ------  -------\n" +
+				"1      A          BBC       1       2      \n" +
+				"2      Long Show  Netflix   12      10     \n",
+		},
+		{
+			name:     "empty episodes",
+			category: "Halloween",
+			episodes: []data.ShowSpecialEpisode{},
+			want:     "No halloween episodes found.\n",
+		},
 	}
-}
 
-func TestFormatSpecialEpisodesTableEmpty(t *testing.T) {
-	if got, want := formatSpecialEpisodesTable("Halloween", nil), "No halloween episodes found.\n"; got != want {
-		t.Fatalf("expected %q, got %q", want, got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := formatSpecialEpisodesTable(tt.category, tt.episodes); got != tt.want {
+				t.Fatalf("formatSpecialEpisodesTable() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
