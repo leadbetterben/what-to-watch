@@ -12,25 +12,16 @@ import (
 )
 
 var fullPathResolver = getFullPath
+var writeShowsFn = writeShowsFile
 
 // showsWriteMu serializes show read-modify-write operations in this process.
 // Multiple processes writing the same shows.json file are not supported.
 var showsWriteMu sync.Mutex
 
-// SetFullPathResolverForTest replaces the data file path resolver and returns
-// a restore function. It is intended for tests that need isolated fixture files.
-func SetFullPathResolverForTest(resolver func(string) string) func() {
-	originalResolver := fullPathResolver
-	fullPathResolver = resolver
-	return func() {
-		fullPathResolver = originalResolver
-	}
-}
-
-func readShows() ([]data.Show, error) {
+func ReadShows() ([]data.Show, error) {
 	raw, err := readFile("shows.json")
 	if err != nil {
-		return nil, fmt.Errorf("readShows: error reading file \n err=%w", err)
+		return nil, fmt.Errorf("readShows: error reading file: %w", err)
 	}
 
 	var shows []data.Show
@@ -38,6 +29,9 @@ func readShows() ([]data.Show, error) {
 		return nil, err
 	}
 	for _, show := range shows {
+		if err := data.ValidateEpisodeCounts(show); err != nil {
+			return nil, err
+		}
 		if err := data.ValidateSpecialEpisodes(show); err != nil {
 			return nil, err
 		}
@@ -49,136 +43,47 @@ func readShows() ([]data.Show, error) {
 	return shows, nil
 }
 
-// ReadAllShows reads every show from shows.json.
-func ReadAllShows() ([]data.Show, error) {
-	return readShows()
-}
-
-// ReadUnwatchedShows returns shows that have no current position and are not marked for rewatch.
-func ReadUnwatchedShows() ([]data.Show, error) {
-	shows, err := readShows()
-	if err != nil {
-		return nil, fmt.Errorf("ReadUnwatchedShows: %w", err)
-	}
-	filtered := make([]data.Show, 0)
-	for _, show := range shows {
-		if show.CurrentSeries == nil && show.CurrentEpisode == nil && !show.Rewatch {
-			filtered = append(filtered, show)
-		}
-	}
-	return filtered, nil
-}
-
-// ReadCurrentShows returns shows with a current series or episode position.
-func ReadCurrentShows() ([]data.Show, error) {
-	shows, err := readShows()
-	if err != nil {
-		return nil, fmt.Errorf("ReadCurrentShows: %w", err)
-	}
-	filtered := make([]data.Show, 0)
-	for _, show := range shows {
-		if show.CurrentSeries != nil || show.CurrentEpisode != nil {
-			filtered = append(filtered, show)
-		}
-	}
-	return filtered, nil
-}
-
-// ReadRewatchShows returns shows marked for rewatch.
-func ReadRewatchShows() ([]data.Show, error) {
-	shows, err := readShows()
-	if err != nil {
-		return nil, fmt.Errorf("ReadRewatchShows: %w", err)
-	}
-	filtered := make([]data.Show, 0)
-	for _, show := range shows {
-		if show.Rewatch {
-			filtered = append(filtered, show)
-		}
-	}
-	return filtered, nil
-}
-
 // ReadFilms reads the films from the films.json file and returns a slice of Film structs.
 func ReadFilms() ([]data.Film, error) {
 	raw, err := readFile("films.json")
 	if err != nil {
-		return nil, fmt.Errorf("ReadFilms: error reading file \n err=%w", err)
+		return nil, fmt.Errorf("ReadFilms: error reading file: %w", err)
 	}
 
 	var films []data.Film
 	if err := json.Unmarshal(raw, &films); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ReadFilms: error unmarshalling JSON: %w", err)
 	}
 
 	return films, nil
 }
 
-// WriteCurrentShows replaces the current-position records in shows.json with the provided slice.
-// It writes to a temporary file in the same directory and renames it
-// to avoid corrupting the file on failure.
-func WriteCurrentShows(shows []data.Show) error {
+// UpdateShows reads the latest complete shows, applies the provided update function and then writes the updated list to the store.
+// It holds a lock on the data whilst updating.
+func UpdateShows(update func([]data.Show) ([]data.Show, error)) error {
 	showsWriteMu.Lock()
 	defer showsWriteMu.Unlock()
 
-	existing, err := readShows()
+	shows, err := ReadShows()
 	if err != nil {
-		return fmt.Errorf("WriteCurrentShows: error reading shows.json \n err=%w", err)
+		return fmt.Errorf("UpdateShows: error reading shows.json: %w", err)
 	}
 
-	merged := make([]data.Show, 0, len(existing)+len(shows))
-	for _, show := range existing {
-		if show.CurrentSeries == nil && show.CurrentEpisode == nil {
-			merged = append(merged, show)
-		}
-	}
-	merged = append(merged, shows...)
-
-	return writeShows(merged)
-}
-
-// UpdateCurrentShows applies update to the latest current shows and persists
-// the result while holding the process-local write lock for the entire
-// read-modify-merge-write transaction. The callback returns the updated shows,
-// whether the selected show was completed, and any error.
-func UpdateCurrentShows(update func([]data.Show) ([]data.Show, bool, error)) (bool, error) {
-	showsWriteMu.Lock()
-	defer showsWriteMu.Unlock()
-
-	existing, err := readShows()
+	updated, err := update(shows)
 	if err != nil {
-		return false, fmt.Errorf("UpdateCurrentShows: error reading shows.json: %w", err)
+		return err
 	}
 
-	current := make([]data.Show, 0, len(existing))
-	for _, show := range existing {
-		if show.CurrentSeries != nil || show.CurrentEpisode != nil {
-			current = append(current, show)
-		}
+	if err := writeShowsFn(updated); err != nil {
+		return fmt.Errorf("UpdateShows: error writing shows.json: %w", err)
 	}
 
-	updated, completed, err := update(current)
-	if err != nil {
-		return false, err
-	}
-
-	merged := make([]data.Show, 0, len(existing)+len(updated))
-	for _, show := range existing {
-		if show.CurrentSeries == nil && show.CurrentEpisode == nil {
-			merged = append(merged, show)
-		}
-	}
-	merged = append(merged, updated...)
-	if err := writeShows(merged); err != nil {
-		return false, fmt.Errorf("UpdateCurrentShows: error writing shows.json: %w", err)
-	}
-
-	return completed, nil
+	return nil
 }
 
 // writeShows atomically replaces shows.json with the supplied complete list.
 // Callers that perform read-modify-write operations must hold showsWriteMu.
-func writeShows(shows []data.Show) error {
+func writeShowsFile(shows []data.Show) error {
 	raw, err := json.MarshalIndent(shows, "", "  ")
 	if err != nil {
 		return err
@@ -193,7 +98,7 @@ func writeShows(shows []data.Show) error {
 	dir := filepath.Dir(fullPath)
 	tmpFile, err := os.CreateTemp(dir, "shows-*.json.tmp")
 	if err != nil {
-		return fmt.Errorf("error creating temp file \n err=%w fullPath=%s", err, fullPath)
+		return fmt.Errorf("error creating temp file at %s: %w", fullPath, err)
 	}
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath)
@@ -201,15 +106,15 @@ func writeShows(shows []data.Show) error {
 	// write to temp file
 	if _, err := tmpFile.Write(raw); err != nil {
 		tmpFile.Close()
-		return fmt.Errorf("error writing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("error writing to temp file at %s: %w", tmpPath, err)
 	}
 	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("error closing temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("error closing temp file at %s: %w", tmpPath, err)
 	}
 
 	// rename temp file to final file
 	if err := os.Rename(tmpPath, fullPath); err != nil {
-		return fmt.Errorf("error renaming temp file \n err=%w fullPath=%s tmpPath=%s", err, fullPath, tmpPath)
+		return fmt.Errorf("error renaming temp file at %s to %s: %w", tmpPath, fullPath, err)
 	}
 
 	return nil
@@ -246,7 +151,7 @@ func readFile(path string) ([]byte, error) {
 
 	raw, err := os.ReadFile(fullPath)
 	if err != nil {
-		return nil, fmt.Errorf("readFile: error reading file \n err=%w path=%s fullPath=%s", err, path, fullPath)
+		return nil, fmt.Errorf("readFile: error reading file %s: %w", path, err)
 	}
 
 	return raw, nil
