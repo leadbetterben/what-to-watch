@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 
 	"what-to-watch/data"
@@ -116,7 +117,7 @@ func GetAllFilms() ([]data.Film, error) {
 	return films, nil
 }
 
-// GetAvailableGenres retrieves a list of unique genres from all shows
+// GetAvailableGenres retrieves the unique genres from all shows in alphabetical order
 func GetAvailableGenres() ([]string, error) {
 	shows, err := readShows()
 	if err != nil {
@@ -134,6 +135,7 @@ func GetAvailableGenres() ([]string, error) {
 	for genre := range genreMap {
 		genres = append(genres, genre)
 	}
+	sort.Strings(genres)
 	return genres, nil
 }
 

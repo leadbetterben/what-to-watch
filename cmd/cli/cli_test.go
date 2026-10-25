@@ -146,10 +146,10 @@ func TestViewShowsByGenre(t *testing.T) {
 	}{
 		{
 			name:       "normal case",
-			genres:     []string{"Drama", "Comedy"},
+			genres:     []string{"Comedy", "Drama"},
 			shows:      []data.Show{{Name: "Unstarted Comedy", Provider: "Netflix"}},
-			input:      "2\n",
-			wantOutput: []string{"Available genres:", "1. Drama", "2. Comedy", "Unwatched shows in genre 'Comedy':", "Unstarted Comedy"},
+			input:      "1\n",
+			wantOutput: []string{"Available genres:", "1. Comedy", "2. Drama", "Unwatched shows in genre 'Comedy':", "Unstarted Comedy"},
 		},
 		{
 			name:       "get genres error",
