@@ -8,15 +8,14 @@ This program can be run as an interactive CLI or as an HTTP server, both using t
 
 **Films**: View your film collection with genre and provider information.
 
-Show data is stored in `db/shows.json` as one array. Shows with
-`currentSeries`/`currentEpisode` are currently watching; shows with
-`rewatch: true` are queued for rewatch; records with neither are unwatched.
-Seasonal entries in `specialEpisodes` use a supported `halloween` or `christmas`
-category with positive series and episode numbers. When `episodes` counts are
-available, the seasonal position must fit within those bounds.
-For a currently watched show, both position fields must be positive and within
-the series and episode counts in `episodes`. Episode counts for that show must
-also be positive; malformed positions are reported as data errors.
+Show data is stored in `db/shows.json` as one array.
+Shows with `currentSeries`/`currentEpisode` are currently watching;
+shows with `rewatch: true` are finished and may be rewatched;
+records with neither are unwatched.
+Seasonal entries in `specialEpisodes` use a supported `halloween` or `christmas` category with positive series and episode numbers.
+When `episodes` counts are available, the seasonal position must fit within those bounds.
+For a currently watched show, both position fields must be positive and within the series and episode counts in `episodes`.
+Episode counts for that show must also be positive; malformed positions are reported as data errors.
 
 The `plans/` directory contains AI-generated plans for implementations.
 
@@ -121,8 +120,8 @@ The program uses consistent handler functions that can be called by either inter
   - `GetAllFilms()` — Retrieves all films
   - `GetAvailableGenres()` — Retrieves all unique genres from shows
   - `GetUnwatchedShowsByGenre(genre)` — Retrieves unwatched shows for a specific genre
-  - `GetHalloweenEpisodes()` / `GetChristmasEpisodes()` — Retrieves curated seasonal episode numbers with show and provider context
-  - `GetRandomHalloweenEpisode()` / `GetRandomChristmasEpisode()` — Retrieves one curated seasonal episode at random
+  - `GetSpecialEpisodes()` — Retrieves curated seasonal episode numbers with show and provider context
+  - `GetRandomSpecialEpisode` — Retrieves one curated seasonal episode at random
 - **`cmd/cli/cli.go`** — Interactive CLI interface that calls the handlers
 - **`cmd/http/http.go`** — HTTP REST API that calls the same handlers
 
@@ -135,6 +134,8 @@ Both modes use the same underlying business logic, ensuring consistency across i
 3. `what-to-watch` should be available to run from any directory
 
 ## Testing
+
+Tests should be written in table driven tests.
 
 Run the full test suite:
 

@@ -1,28 +1,25 @@
 # AI Agent Instructions for this Repository
 
-Purpose
+## Purpose
 
 - This document gives concise, practical instructions for AI agents (and human reviewers) who will make, test, and validate changes in the `what-to-watch` Go CLI repository.
 
-Environment & Tooling
+## Environment & Tooling
 
-- Go toolchain: `go 1.27.2` (use the version in `go.mod` and CI).
+- Go toolchain: `go 1.27.3` (use the version in `go.mod` and CI).
 - Shell used for commands in examples: Windows PowerShell (v5.1).
 
-Key files and intent
+## Key files and intent
 
 - `main.go` — dispatcher: parses flags (`-mode=cli|http`, `-port=PORT`), routes to CLI or HTTP mode.
-- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`
+- `handlers/handlers.go` — core business logic: `GetCurrentlyWatchingShows()`, `MarkShowWatched()`, `GetAllFilms()`, `GetAvailableGenres()`, `GetUnwatchedShowsByGenre()`, `GetSpecialEpisodes`, `GetRandomSpecialEpisode`.
 - `cmd/cli/cli.go` — interactive CLI interface; calls handlers, including options for Halloween and Christmas episodes.
 - `cmd/http/http.go` — HTTP REST API server; implements `Handler` interface pattern for dependency injection in tests.
-- `cmd/http/http_test.go` — Table-driven tests for all HTTP handler functions. Uses `mockHandler` to stub business logic calls.
-- `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes category readers, `WriteCurrentShows`, and `ReadFilms`).
-- `data/data.go` — `Show`, `SpecialEpisode`, `SpecialCategory`, and `Film` types used across packages. Seasonal categories are the constants `SpecialCategoryHalloween` and `SpecialCategoryChristmas`.
-- `shows/shows.go` — business logic: `GetCurrentlyWatching`, `MarkEpisodeWatched`, `GetUniqueGenres`, `GetUnwatchedShowsByGenre`, and `GetSpecialEpisodes`.
-- `shows/shows_test.go` — unit tests for `shows` package (fast, in-memory).
+- `db/db.go` — read/write helpers and `getFullPath` logic for `db/shows.json` and `db/films.json` (includes `ReadShows`, `UpdateShows`, and `ReadFilms`).
 - `db/shows.json` and `db/films.json` — canonical on-disk data used when running `go run .`. Show categories are inferred from current position fields and the `rewatch` flag.
+- `data/data.go` — `Show`, `SpecialEpisode`, `SpecialCategory`, and `Film` types used across packages. Seasonal categories are the constants `SpecialCategoryHalloween` and `SpecialCategoryChristmas`.
 
-Common Commands (PowerShell)
+## Common Commands (PowerShell)
 
 ``` sh
 go version
@@ -33,13 +30,13 @@ go run .              # CLI mode (default)
 go run . -mode=http   # HTTP mode on default port 8080
 ```
 
-Agent Workflow Expectations
+## Agent Workflow Expectations
 
-- Use the repository's Go version (`go 1.27.2`) to avoid CI drift.
+- Use the repository's Go version (`go 1.27.3`) to avoid CI drift.
 - Run `go build ./...` and `go test ./...` locally before proposing changes.
 - Keep changes minimal and focused; do not refactor unrelated code.
 
-Editing & Patching
+## Editing & Patching
 
 - Use the provided `apply_patch` workflow (or equivalent) to modify files.
 - When editing files:
@@ -47,10 +44,9 @@ Editing & Patching
   - Avoid unrelated formatting changes.
   - If a change touches file I/O, verify `db.getFullPath` semantics (built binary vs `go run`).
 
-Testing & Validation
+## Testing & Validation
 
-- Unit tests live under `shows/` for business logic and `cmd/http/` for HTTP handlers. They are fast and authoritative.
-- HTTP handler tests use table-driven approach with `mockHandler` implementing the `Handler` interface for dependency injection.
+- Tests should be table-driven and test the exposed interface of a package.
 - Tests should not rely on `db/shows.json` being modified — tests use isolated fixture files.
 - After implementing changes, run:
 
@@ -60,13 +56,13 @@ go test ./...
 go test ./... -cover
 ```
 
-Committing & PRs
+## Committing & PRs
 
 - Commit messages should be concise and descriptive.
 - Before opening a PR, ensure `go build ./...` and `go test ./...` pass.
-- CI runs `go build -v ./...` and `go test -race -v ./...` on Go 1.27.2; target the same locally.
+- CI runs `go build -v ./...` and `go test -race -v ./...` on Go 1.27.3; target the same locally.
 
-Handler Architecture
+## Handler Architecture
 
 The program is refactored to support both CLI and HTTP modes using consistent handler functions:
 
@@ -76,7 +72,7 @@ The program is refactored to support both CLI and HTTP modes using consistent ha
 - Easy to extend: adding features updates both CLI and HTTP simultaneously
 - Seasonal episode data is stored under each show as `specialEpisodes` entries with category, series, and episode; HTTP exposes `/specials/halloween` and `/specials/christmas`.
 
-Documentation
+## Documentation
 
 - When making changes, update documentation files where relevant:
   - `README.md` — end-user usage, examples, and high-level project description.
@@ -84,13 +80,13 @@ Documentation
   - `AGENTS.md` — keep this file in sync with any changes to agent expectations, tooling, or workflows.
 - This is especially important for new features, public API changes, large refactors, or structural changes. Include brief notes in the PR description summarizing doc updates.
 
-Data and File I/O Notes
+## Data and File I/O Notes
 
 - Show readers search for `shows.json` next to the executable and fall back to the source `db` directory. Built binaries may expect `shows.json` next to the binary, whereas `go run .` finds the source `db/shows.json`.
 - `db.ReadFilms()` searches for `films.json` next to the executable and falls back to the source `db` directory. Built binaries may expect `films.json` next to the binary, whereas `go run .` finds the source `db/films.json`.
-- `db.WriteCurrentShows()` updates the current records in `shows.json` and writes atomically (temp file then rename). Be careful not to accidentally commit runtime-modified JSON files.
+- `db.UpdateShows()` updates the current records in `shows.json` and writes atomically (temp file then rename). Be careful not to accidentally commit runtime-modified JSON files.
 
-Agent Behaviour & Tooling Conventions
+## Agent Behaviour & Tooling Conventions
 
 - Use the repo-provided `manage_todo_list` for planning. Always:
 
@@ -101,23 +97,23 @@ Agent Behaviour & Tooling Conventions
 
 - Provide brief preambles before automated tool calls (1–2 short sentences) describing intent.
 - After groups of changes or several tool calls, return a concise progress update (1–2 sentences).
--
 
-Plans Directory
+## Plans Directory
 
 - All AI-generated plans must be saved in the `plans/` directory as Markdown files (`*.md`). Keep filenames descriptive (for example `3-show-films.md`) and include clear steps, acceptance criteria, and any commands or files changed.
+- Plans should include issue numbers if related to a GitHub issue.
 
-Safety and Scope
+## Safety and Scope
 
 - Do not introduce untrusted external dependencies unless necessary and approved.
 - Avoid making broad stylistic or structural changes without explicit instructions.
 
-If You Need More
+## If You Need More
 
 - If any CI or test failures are unclear, run the failing commands locally and include the exact error output in your report.
-- When in doubt about changing `db/shows.json` on-disk, ask for guidance or open a draft PR.
+- Avoid changing the DB data. When in doubt about changing `db/shows.json` on-disk, ask for guidance.
 
-Contact / Handoff
+## Contact / Handoff
 
 - When work is complete, include in the final message:
   - Files changed.

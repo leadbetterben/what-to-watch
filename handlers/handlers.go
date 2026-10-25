@@ -153,18 +153,6 @@ func GetUnwatchedShowsByGenre(genre string) ([]data.Show, error) {
 	return unwatched, nil
 }
 
-func GetRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpisode, error) {
-	episodes, err := GetSpecialEpisodes(category)
-	if err != nil {
-		return data.ShowSpecialEpisode{}, err
-	}
-	if len(episodes) == 0 {
-		return data.ShowSpecialEpisode{}, fmt.Errorf("no %s episodes found", category)
-	}
-
-	return episodes[rand.Intn(len(episodes))], nil
-}
-
 func GetSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisode, error) {
 	shows, err := readShows()
 	if err != nil {
@@ -187,4 +175,16 @@ func GetSpecialEpisodes(category data.SpecialCategory) ([]data.ShowSpecialEpisod
 		}
 	}
 	return episodes, nil
+}
+
+func GetRandomSpecialEpisode(category data.SpecialCategory) (data.ShowSpecialEpisode, error) {
+	episodes, err := GetSpecialEpisodes(category)
+	if err != nil {
+		return data.ShowSpecialEpisode{}, err
+	}
+	if len(episodes) == 0 {
+		return data.ShowSpecialEpisode{}, fmt.Errorf("no %s episodes found", category)
+	}
+
+	return episodes[rand.Intn(len(episodes))], nil
 }
