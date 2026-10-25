@@ -70,13 +70,6 @@ type Server struct {
 	listenAndServe func(*http.Server) error
 }
 
-const (
-	readHeaderTimeout = 5 * time.Second
-	readTimeout       = 10 * time.Second
-	writeTimeout      = 30 * time.Second
-	idleTimeout       = 60 * time.Second
-)
-
 // NewServer creates a new HTTP server
 func NewServer(port int) *Server {
 	return newServer(port, &defaultHandler{})
@@ -92,10 +85,10 @@ func newServer(port int, handler Handler) *Server {
 	s.httpServer = &http.Server{
 		Addr:              net.JoinHostPort("127.0.0.1", strconv.Itoa(port)),
 		Handler:           s.routes(),
-		ReadHeaderTimeout: readHeaderTimeout,
-		ReadTimeout:       readTimeout,
-		WriteTimeout:      writeTimeout,
-		IdleTimeout:       idleTimeout,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 	s.listenAndServe = func(server *http.Server) error {
 		return server.ListenAndServe()
@@ -111,33 +104,28 @@ func (s *Server) Start() error {
 
 func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/shows", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetShows(w, r)
-	})
-	mux.HandleFunc("/shows/watch", func(w http.ResponseWriter, r *http.Request) {
-		s.handleMarkShowWatched(w, r)
-	})
+
+	mux.HandleFunc("/shows", s.handleGetShows)
+	mux.HandleFunc("/shows/watch", s.handleMarkShowWatched)
 	mux.HandleFunc("/films", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetFilms(w, r)
+		handleGetFunc(w, r, s.handler.GetAllFilms)
 	})
 	mux.HandleFunc("/genres", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetGenres(w, r)
+		handleGetFunc(w, r, s.handler.GetAvailableGenres)
 	})
 	mux.HandleFunc("/specials/halloween", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetHalloweenEpisodes(w, r)
+		handleGetFunc(w, r, s.handler.GetHalloweenEpisodes)
 	})
 	mux.HandleFunc("/specials/christmas", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetChristmasEpisodes(w, r)
+		handleGetFunc(w, r, s.handler.GetChristmasEpisodes)
 	})
 	mux.HandleFunc("/specials/halloween/random", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetRandomHalloweenEpisode(w, r)
+		handleGetFunc(w, r, s.handler.GetRandomHalloweenEpisode)
 	})
 	mux.HandleFunc("/specials/christmas/random", func(w http.ResponseWriter, r *http.Request) {
-		s.handleGetRandomChristmasEpisode(w, r)
+		handleGetFunc(w, r, s.handler.GetRandomChristmasEpisode)
 	})
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		s.handleHealth(w, r)
-	})
+	mux.HandleFunc("/health", s.handleHealth)
 
 	return mux
 }
@@ -196,80 +184,6 @@ func (s *Server) handleMarkShowWatched(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, isCompleted)
 }
 
-func (s *Server) handleGetFilms(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		writeMethodError(w, http.MethodGet)
-		return
-	}
-
-	films, err := s.handler.GetAllFilms()
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, films)
-}
-
-func (s *Server) handleGetGenres(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		writeMethodError(w, http.MethodGet)
-		return
-	}
-
-	genres, err := s.handler.GetAvailableGenres()
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, genres)
-}
-
-func (s *Server) handleGetHalloweenEpisodes(w http.ResponseWriter, r *http.Request) {
-	s.handleGetSpecialEpisodes(w, r, s.handler.GetHalloweenEpisodes)
-}
-
-func (s *Server) handleGetChristmasEpisodes(w http.ResponseWriter, r *http.Request) {
-	s.handleGetSpecialEpisodes(w, r, s.handler.GetChristmasEpisodes)
-}
-
-func (s *Server) handleGetRandomHalloweenEpisode(w http.ResponseWriter, r *http.Request) {
-	s.handleGetRandomSpecialEpisode(w, r, s.handler.GetRandomHalloweenEpisode)
-}
-
-func (s *Server) handleGetRandomChristmasEpisode(w http.ResponseWriter, r *http.Request) {
-	s.handleGetRandomSpecialEpisode(w, r, s.handler.GetRandomChristmasEpisode)
-}
-
-func (s *Server) handleGetSpecialEpisodes(w http.ResponseWriter, r *http.Request, get func() ([]data.ShowSpecialEpisode, error)) {
-	if r.Method != http.MethodGet {
-		writeMethodError(w, http.MethodGet)
-		return
-	}
-
-	episodes, err := get()
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, episodes)
-}
-
-func (s *Server) handleGetRandomSpecialEpisode(w http.ResponseWriter, r *http.Request, get func() (data.ShowSpecialEpisode, error)) {
-	if r.Method != http.MethodGet {
-		writeMethodError(w, http.MethodGet)
-		return
-	}
-
-	episode, err := get()
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, episode)
-}
-
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeMethodError(w, http.MethodGet)
@@ -277,4 +191,19 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, nil)
+}
+
+func handleGetFunc[T any](w http.ResponseWriter, r *http.Request, get func() (T, error)) {
+	if r.Method != http.MethodGet {
+		writeMethodError(w, http.MethodGet)
+		return
+	}
+
+	result, err := get()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
 }
