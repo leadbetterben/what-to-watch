@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -73,6 +74,112 @@ func TestReadShows(t *testing.T) {
 				if !reflect.DeepEqual(shows[i], want) {
 					t.Fatalf("unexpected show at index %d: %+v", i, shows[i])
 				}
+			}
+		})
+	}
+}
+
+func TestUpdateShows(t *testing.T) {
+	originalShows := []data.Show{
+		{Name: "Current", Episodes: []int{2}, CurrentSeries: intPointer(1), CurrentEpisode: intPointer(1)},
+		{Name: "Queued", Episodes: []int{3}},
+	}
+	updatedShows := []data.Show{
+		{Name: "Current", Episodes: []int{2}, CurrentSeries: intPointer(1), CurrentEpisode: intPointer(2)},
+		{Name: "Queued", Episodes: []int{3}},
+	}
+	fixture := `[{"name":"Current","episodes":[2],"currentSeries":1,"currentEpisode":1},{"name":"Queued","episodes":[3]}]`
+
+	tests := []struct {
+		name         string
+		fixture      string
+		callbackErr  error
+		writeErr     error
+		wantErr      string
+		wantCallback bool
+		wantWrite    bool
+	}{
+		{
+			name:    "read error",
+			wantErr: "UpdateShows: error reading shows.json",
+		},
+		{
+			name:         "callback error",
+			fixture:      fixture,
+			callbackErr:  errors.New("callback failed"),
+			wantErr:      "callback failed",
+			wantCallback: true,
+		},
+		{
+			name:         "write error",
+			fixture:      fixture,
+			writeErr:     errors.New("write failed"),
+			wantErr:      "UpdateShows: error writing shows.json: write failed",
+			wantCallback: true,
+			wantWrite:    true,
+		},
+		{
+			name:         "success",
+			fixture:      fixture,
+			wantCallback: true,
+			wantWrite:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := useTempDataDir(t)
+			if tt.fixture != "" {
+				writeFixture(t, dir, "shows.json", tt.fixture)
+			}
+
+			originalWriteShowsFn := writeShowsFn
+			writeCalled := false
+			writeShowsFn = func(shows []data.Show) error {
+				writeCalled = true
+				if !reflect.DeepEqual(shows, updatedShows) {
+					t.Errorf("write callback received unexpected shows: %+v", shows)
+				}
+				if tt.writeErr != nil {
+					return tt.writeErr
+				}
+				return writeShowsFile(shows)
+			}
+			t.Cleanup(func() { writeShowsFn = originalWriteShowsFn })
+
+			callbackCalled := false
+			err := UpdateShows(func(shows []data.Show) ([]data.Show, error) {
+				callbackCalled = true
+				if !reflect.DeepEqual(shows, originalShows) {
+					t.Errorf("callback received unexpected shows: %+v", shows)
+				}
+				if tt.callbackErr != nil {
+					return nil, tt.callbackErr
+				}
+				return updatedShows, nil
+			})
+
+			if callbackCalled != tt.wantCallback {
+				t.Fatalf("callback called = %v, want %v", callbackCalled, tt.wantCallback)
+			}
+			if writeCalled != tt.wantWrite {
+				t.Fatalf("write called = %v, want %v", writeCalled, tt.wantWrite)
+			}
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", tt.wantErr, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("UpdateShows returned error: %v", err)
+			}
+			got, err := ReadShows()
+			if err != nil {
+				t.Fatalf("ReadShows returned error after update: %v", err)
+			}
+			if !reflect.DeepEqual(got, updatedShows) {
+				t.Fatalf("expected persisted shows %+v, got %+v", updatedShows, got)
 			}
 		})
 	}

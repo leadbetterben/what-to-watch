@@ -12,6 +12,7 @@ import (
 )
 
 var fullPathResolver = getFullPath
+var writeShowsFn = writeShowsFile
 
 // showsWriteMu serializes show read-modify-write operations in this process.
 // Multiple processes writing the same shows.json file are not supported.
@@ -57,48 +58,32 @@ func ReadFilms() ([]data.Film, error) {
 	return films, nil
 }
 
-// UpdateCurrentShows applies update to the latest current shows and persists
-// the result while holding the process-local write lock for the entire
-// read-modify-merge-write transaction. The callback returns the updated shows,
-// whether the selected show was completed, and any error.
-func UpdateCurrentShows(update func([]data.Show) ([]data.Show, bool, error)) (bool, error) {
+// UpdateShows reads the latest complete shows, applies the provided update function and then writes the updated list to the store.
+// It holds a lock on the data whilst updating.
+func UpdateShows(update func([]data.Show) ([]data.Show, error)) error {
 	showsWriteMu.Lock()
 	defer showsWriteMu.Unlock()
 
-	existing, err := ReadShows()
+	shows, err := ReadShows()
 	if err != nil {
-		return false, fmt.Errorf("UpdateCurrentShows: error reading shows.json: %w", err)
+		return fmt.Errorf("UpdateShows: error reading shows.json: %w", err)
 	}
 
-	current := make([]data.Show, 0, len(existing))
-	for _, show := range existing {
-		if show.CurrentSeries != nil || show.CurrentEpisode != nil {
-			current = append(current, show)
-		}
-	}
-
-	updated, completed, err := update(current)
+	updated, err := update(shows)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	merged := make([]data.Show, 0, len(existing)+len(updated))
-	for _, show := range existing {
-		if show.CurrentSeries == nil && show.CurrentEpisode == nil {
-			merged = append(merged, show)
-		}
-	}
-	merged = append(merged, updated...)
-	if err := writeShows(merged); err != nil {
-		return false, fmt.Errorf("UpdateCurrentShows: error writing shows.json: %w", err)
+	if err := writeShowsFn(updated); err != nil {
+		return fmt.Errorf("UpdateShows: error writing shows.json: %w", err)
 	}
 
-	return completed, nil
+	return nil
 }
 
 // writeShows atomically replaces shows.json with the supplied complete list.
 // Callers that perform read-modify-write operations must hold showsWriteMu.
-func writeShows(shows []data.Show) error {
+func writeShowsFile(shows []data.Show) error {
 	raw, err := json.MarshalIndent(shows, "", "  ")
 	if err != nil {
 		return err

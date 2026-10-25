@@ -9,12 +9,11 @@ import (
 	"what-to-watch/db"
 )
 
-// Storage operations are variables so handler tests can stub persistence without
-// depending on the database implementation.
+// Storage operations are variables so handler tests can stub persistence without depending on the database implementation.
 var (
-	readShows          = db.ReadShows
-	readFilms          = db.ReadFilms
-	updateCurrentShows = db.UpdateCurrentShows
+	readShows   = db.ReadShows
+	readFilms   = db.ReadFilms
+	updateShows = db.UpdateShows
 )
 
 // GetCurrentlyWatchingShows retrieves the list of currently watching shows
@@ -51,22 +50,26 @@ func GetCurrentlyWatchingShows() ([]data.Show, error) {
 // MarkShowWatched marks an episode as watched and updates the data store.
 // idx is 1-based index from the currently watching list
 func MarkShowWatched(idx int) (bool, error) {
-	completed, err := updateCurrentShows(func(shows []data.Show) ([]data.Show, bool, error) {
-		if idx <= 0 {
-			return nil, false, fmt.Errorf("invalid index: %d", idx)
+	completed := false
+	err := updateShows(func(shows []data.Show) ([]data.Show, error) {
+		current := make([]int, 0, len(shows))
+		for i, show := range shows {
+			if show.CurrentSeries != nil || show.CurrentEpisode != nil {
+				current = append(current, i)
+			}
 		}
 
-		if idx > len(shows) {
-			return nil, false, fmt.Errorf("index out of range")
+		if idx <= 0 || idx > len(current) {
+			return nil, fmt.Errorf("invalid index: %d with %d shows available", idx, len(current))
 		}
 
-		s := &shows[idx-1]
+		s := &shows[current[idx-1]]
 
 		if err := data.ValidateCurrentPosition(*s); err != nil {
-			return nil, false, err
+			return nil, err
 		}
 		if s.CurrentSeries == nil && s.CurrentEpisode == nil {
-			return nil, false, fmt.Errorf("selected show is not currently being watched")
+			return nil, fmt.Errorf("selected show is not currently being watched")
 		}
 
 		curSeries := *s.CurrentSeries
@@ -86,14 +89,15 @@ func MarkShowWatched(idx int) (bool, error) {
 				// finished the show
 				s.CurrentSeries = nil
 				s.CurrentEpisode = nil
-				return shows, true, nil
+				completed = true
+				return shows, nil
 			}
 		}
 
 		// set updated values
 		s.CurrentSeries = &curSeries
 		s.CurrentEpisode = &curEpisode
-		return shows, false, nil
+		return shows, nil
 	})
 	if err != nil {
 		return false, err

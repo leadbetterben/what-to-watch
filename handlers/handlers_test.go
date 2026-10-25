@@ -136,12 +136,12 @@ func TestMarkShowWatched(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			stored := append([]data.Show(nil), tt.shows...)
 			stubStorage(t, nil, nil)
-			updateCurrentShows = func(update func([]data.Show) ([]data.Show, bool, error)) (bool, error) {
-				updated, completed, err := update(stored)
+			updateShows = func(update func([]data.Show) ([]data.Show, error)) error {
+				updated, err := update(stored)
 				if err == nil {
 					stored = updated
 				}
-				return completed, err
+				return err
 			}
 			completed, err := MarkShowWatched(tt.index)
 			if tt.wantError {
@@ -440,14 +440,14 @@ func TestGetRandomSeasonalSpecialEpisode(t *testing.T) {
 
 func stubStorage(t *testing.T, shows []data.Show, films []data.Film) {
 	t.Helper()
-	oldReadShows, oldReadFilms, oldUpdate := readShows, readFilms, updateCurrentShows
+	oldReadShows, oldReadFilms, oldUpdate := readShows, readFilms, updateShows
 	readShows = func() ([]data.Show, error) { return shows, nil }
 	readFilms = func() ([]data.Film, error) { return films, nil }
-	updateCurrentShows = func(update func([]data.Show) ([]data.Show, bool, error)) (bool, error) {
-		_, completed, err := update(shows)
-		return completed, err
+	updateShows = func(update func([]data.Show) ([]data.Show, error)) error {
+		_, err := update(shows)
+		return err
 	}
-	t.Cleanup(func() { readShows, readFilms, updateCurrentShows = oldReadShows, oldReadFilms, oldUpdate })
+	t.Cleanup(func() { readShows, readFilms, updateShows = oldReadShows, oldReadFilms, oldUpdate })
 }
 
 func intPtr(i int) *int {
